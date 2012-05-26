@@ -23,7 +23,7 @@
 //          Yuan Yuan yuanyu@cse.ohio-state.edu                          
 //          Yin Huai  huai@cse.ohio-state.edu    
 // Extended with Spatial features by: Camelia C  camelie_1985@yahoo.com
-// Time: 20-05-2012                                                      
+// Time: 05-20-2012                                                      
 //*************************************************************************
 
 
