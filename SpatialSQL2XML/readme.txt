@@ -4,6 +4,8 @@ Suppose we have the following folders structure:
  |--SpatialSQL2XML
  |---- YSmartSpatial.g
  |---- YSmartSpatialMain.c
+ |---- antlr-3.3.tar.gz
+ |---- antlr-3.3 (after preparing the environment)
  |--test
  |---- Q.sql
  |---- output
