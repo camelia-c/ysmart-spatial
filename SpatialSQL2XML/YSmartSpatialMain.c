@@ -21,8 +21,9 @@
 //                                                                       //
 // Authors: Rubao Lee liru@cse.ohio-state.edu                            //
 //          Yuan Yuan yuanyu@cse.ohio-state.edu                          //
-//          Yin Huai  huai@cse.ohio-state.edu                            //
-// Time: 11-30-2011                                                      //
+//          Yin Huai  huai@cse.ohio-state.edu
+// Extended/ Adapted for spatial features by Camelia C camelie_1985@yahoo.com //
+// Time: 05-20-2012                                                      //
 /*************************************************************************/
 
 /**************************************************************************/
