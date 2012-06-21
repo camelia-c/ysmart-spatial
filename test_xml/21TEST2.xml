@@ -1,0 +1,98 @@
+<query>
+<node tokentype="8" tokenname="T_SELECT" line="1" positioninline="0" childcount="4">
+<content>T_SELECT</content>
+<node tokentype="4" tokenname="T_RESERVED" line="1" positioninline="0" childcount="0">
+<content>SELECT</content>
+</node><node tokentype="9" tokenname="T_COLUMN_LIST" line="1" positioninline="8" childcount="1">
+<content>T_COLUMN_LIST</content>
+<node tokentype="10" tokenname="T_SELECT_COLUMN" line="1" positioninline="8" childcount="6">
+<content>T_SELECT_COLUMN</content>
+<node tokentype="216" tokenname="'AVG'" line="1" positioninline="8" childcount="0">
+<content>AVG</content>
+</node><node tokentype="51" tokenname="LPAREN" line="1" positioninline="11" childcount="0">
+<content>(</content>
+</node><node tokentype="61" tokenname="ID" line="1" positioninline="12" childcount="0">
+<content>f</content>
+</node><node tokentype="45" tokenname="DOT" line="1" positioninline="13" childcount="0">
+<content>.</content>
+</node><node tokentype="61" tokenname="ID" line="1" positioninline="14" childcount="0">
+<content>feature1</content>
+</node><node tokentype="52" tokenname="RPAREN" line="1" positioninline="22" childcount="0">
+<content>)</content>
+</node></node></node><node tokentype="11" tokenname="T_FROM" line="2" positioninline="0" childcount="9">
+<content>T_FROM</content>
+<node tokentype="4" tokenname="T_RESERVED" line="2" positioninline="0" childcount="0">
+<content>FROM</content>
+</node><node tokentype="61" tokenname="ID" line="2" positioninline="5" childcount="0">
+<content>image</content>
+</node><node tokentype="61" tokenname="ID" line="2" positioninline="11" childcount="0">
+<content>i</content>
+</node><node tokentype="43" tokenname="COMMA" line="2" positioninline="12" childcount="0">
+<content>,</content>
+</node><node tokentype="61" tokenname="ID" line="2" positioninline="14" childcount="0">
+<content>collection</content>
+</node><node tokentype="61" tokenname="ID" line="2" positioninline="25" childcount="0">
+<content>c</content>
+</node><node tokentype="43" tokenname="COMMA" line="2" positioninline="26" childcount="0">
+<content>,</content>
+</node><node tokentype="61" tokenname="ID" line="2" positioninline="28" childcount="0">
+<content>feature</content>
+</node><node tokentype="61" tokenname="ID" line="2" positioninline="36" childcount="0">
+<content>f</content>
+</node></node><node tokentype="13" tokenname="T_WHERE" line="3" positioninline="0" childcount="2">
+<content>T_WHERE</content>
+<node tokentype="4" tokenname="T_RESERVED" line="3" positioninline="0" childcount="0">
+<content>WHERE</content>
+</node><node tokentype="22" tokenname="T_COND_AND" line="3" positioninline="7" childcount="3">
+<content>T_COND_AND</content>
+<node tokentype="22" tokenname="T_COND_AND" line="3" positioninline="7" childcount="5">
+<content>T_COND_AND</content>
+<node tokentype="61" tokenname="ID" line="3" positioninline="7" childcount="0">
+<content>i</content>
+</node><node tokentype="45" tokenname="DOT" line="3" positioninline="8" childcount="0">
+<content>.</content>
+</node><node tokentype="61" tokenname="ID" line="3" positioninline="9" childcount="0">
+<content>pac_uid</content>
+</node><node tokentype="63" tokenname="EQ" line="3" positioninline="17" childcount="0">
+<content>=</content>
+</node><node tokentype="69" tokenname="QUOTED_STRING" line="3" positioninline="18" childcount="0">
+<content>'PAC1'</content>
+</node></node><node tokentype="22" tokenname="T_COND_AND" line="4" positioninline="2" childcount="8">
+<content>T_COND_AND</content>
+<node tokentype="4" tokenname="T_RESERVED" line="4" positioninline="2" childcount="0">
+<content>AND</content>
+</node><node tokentype="61" tokenname="ID" line="4" positioninline="8" childcount="0">
+<content>c</content>
+</node><node tokentype="45" tokenname="DOT" line="4" positioninline="9" childcount="0">
+<content>.</content>
+</node><node tokentype="61" tokenname="ID" line="4" positioninline="10" childcount="0">
+<content>pais_uid</content>
+</node><node tokentype="63" tokenname="EQ" line="4" positioninline="18" childcount="0">
+<content>=</content>
+</node><node tokentype="61" tokenname="ID" line="4" positioninline="20" childcount="0">
+<content>i</content>
+</node><node tokentype="45" tokenname="DOT" line="4" positioninline="21" childcount="0">
+<content>.</content>
+</node><node tokentype="61" tokenname="ID" line="4" positioninline="22" childcount="0">
+<content>pais_uid</content>
+</node></node><node tokentype="22" tokenname="T_COND_AND" line="5" positioninline="2" childcount="8">
+<content>T_COND_AND</content>
+<node tokentype="4" tokenname="T_RESERVED" line="5" positioninline="2" childcount="0">
+<content>AND</content>
+</node><node tokentype="61" tokenname="ID" line="5" positioninline="6" childcount="0">
+<content>f</content>
+</node><node tokentype="45" tokenname="DOT" line="5" positioninline="7" childcount="0">
+<content>.</content>
+</node><node tokentype="61" tokenname="ID" line="5" positioninline="8" childcount="0">
+<content>doc_uid</content>
+</node><node tokentype="63" tokenname="EQ" line="5" positioninline="15" childcount="0">
+<content>=</content>
+</node><node tokentype="61" tokenname="ID" line="5" positioninline="17" childcount="0">
+<content>c</content>
+</node><node tokentype="45" tokenname="DOT" line="5" positioninline="18" childcount="0">
+<content>.</content>
+</node><node tokentype="61" tokenname="ID" line="5" positioninline="19" childcount="0">
+<content>doc_uid</content>
+</node></node></node></node></node><node tokentype="42" tokenname="SEMI" line="5" positioninline="26" childcount="0">
+<content>;</content>
+</node></query>
