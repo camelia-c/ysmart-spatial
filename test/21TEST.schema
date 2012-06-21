@@ -1,0 +1,9 @@
+ALGORITHM|alg_uid:TEXT|alg_name:TEXT
+PARAMETER_SET|param_uid:TEXT|param_name:TEXT|param1:DECIMAL|param2:DECIMAL
+PACIENT|pac_uid:TEXT|pac_name:TEXT
+RESULT_DOCUMENT|doc_uid:TEXT|doc_name:TEXT|doc_datetime:DATE
+IMAGE|pais_uid:TEXT|image_name:TEXT|pac_uid:TEXT
+COLLECTION|col_id:TEXT|alg_uid:TEXT|param_uid:TEXT|pais_uid:TEXT|doc_uid:TEXT
+TILE|tile_name:TEXT|pais_uid:TEXT|geom:ST_GEOMETRY
+MARKUP|doc_uid:TEXT|tile_name:TEXT|markup_uid:TEXT|geom:ST_GEOMETRY
+FEATURE|doc_uid:TEXT|tile_name:TEXT|markup_uid:TEXT|feature1:DECIMAL|feature2:DECIMAL 
