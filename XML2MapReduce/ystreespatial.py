@@ -703,6 +703,7 @@ class QueryPlanTreeBase(object):
         return self
     
     def convert_to_binary_join_tree_spatial(self):
+        print 'convert_to_binary_join_tree_spatial in QUERYPLANBASETREENODE'
         return self
     
     def identify_join_types(self):
@@ -737,6 +738,7 @@ class OrderByNode(QueryPlanTreeBase):
     def convert_to_binary_join_tree_spatial(self):
         self.child = self.child.convert_to_binary_join_tree_spatial()
         self.child.parent = self
+        print 'convert_to_binary_join_tree_spatial in ORDERBYNODE'
         return super(OrderByNode, self).convert_to_binary_join_tree_spatial()        
     
     def identify_join_types(self):
@@ -804,6 +806,7 @@ class GroupByNode(QueryPlanTreeBase):
     def convert_to_binary_join_tree_spatial(self):
         self.child = self.child.convert_to_binary_join_tree_spatial()
         self.child.parent = self
+        print 'convert_to_binary_join_tree_spatial in GROUPBYNODE'
         return super(GroupByNode, self).convert_to_binary_join_tree_spatial()     
     
     def identify_join_types(self):
@@ -923,6 +926,7 @@ class SelectProjectNode(QueryPlanTreeBase):
     def convert_to_binary_join_tree_spatial(self):
         self.child = self.child.convert_to_binary_join_tree_spatial()
         self.child.parent = self
+        print 'convert_to_binary_join_tree_spatial in SELECTPROJECTNODE'
         return super(SelectProjectNode,self).convert_to_binary_join_tree_spatial()    
     
     def identify_join_types(self):
@@ -996,7 +1000,12 @@ class TableNode(QueryPlanTreeBase):
         return
     
     def identify_join_types(self):
+        
         return
+    
+    def convert_to_binary_join_tree_spatial(self):
+        print 'convert_to_binary_join_tree_spatial in TABLENODE'+self.table_name
+        return self    
 
     def debug(self, level):
 
@@ -1213,6 +1222,72 @@ class TwoJoinNode(QueryPlanTreeBase):
         self.left_child.debug(level + 1)
 
         self.right_child.debug(level + 1)
+        
+class TwoJoinSpatialNode(TwoJoinNode):
+    def __init__(self):
+        TwoJoinNode.__init__(self)   
+    
+    def debug(self, level):
+    
+        pb = ""
+        for i in range(level):
+            pb += "    "
+
+
+        if self.select_list is None:
+            sscs = str(None)
+        else:
+            sscs = self.select_list.converted_exp_str
+
+
+        if self.where_condition is None:
+            swc = str(None)
+        else:
+            swc = self.where_condition.converted_exp_str
+
+        if self.join_explicit == True:
+            #join_condition must be a FirstStepOnCondition
+            if self.join_condition is None:
+                oc = str(None)
+            else:
+                oc = self.join_condition.converted_exp_str
+
+        else:
+            
+            oc = str(None)
+            
+        if oc is None:
+            if swc is None:
+                if sscs is None:
+                    print pb, "TwoJoinSpatialNode", "[None]", "[None]", "[None]"
+                else:
+                    print pb, "TwoJoinSpatialNode", "[" + sscs + "]", "[None]", "[None]"
+            else:
+                if sscs is None:
+                    print pb, "TwoJoinSpatialNode", "[None]", "[" + swc + "]", "[None]"
+                else:
+                    print pb, "TwoJoinSpatialNode", "[" + sscs + "]", "[" + swc + "]", "[None]"  
+        else:
+            if swc is None:
+                if sscs is None:
+                    print pb, "TwoJoinSpatialNode", "[None]", "[None]", "[" + oc + "]"
+                else:
+                    print pb, "TwoJoinSpatialNode", "[" + sscs + "]", "[None]", "[" + oc + "]"
+            else:
+                if sscs is None:
+                    print pb, "TwoJoinSpatialNode", "[None]", "[" + swc + "]", "[" + oc + "]"
+                else:
+                    print pb, "TwoJoinSpatialNode", "[" + sscs + "]", "[" + swc + "]", "[" + oc + "]" 
+            
+            
+            
+            
+           
+        #print pb, "TwoJoinNode", "[" + sscs + "]", "[" + swc + "]", "[" + oc + "]"
+
+        self.left_child.debug(level + 1)
+
+        self.right_child.debug(level + 1)    
 
 #useless once we have TwoJoinNode
 class MultipleJoinNode(QueryPlanTreeBase):
@@ -1257,13 +1332,209 @@ class MultipleJoinNode(QueryPlanTreeBase):
         self.children_list = []
 
         for a_child in tmp_list:
-            self.children_list.append(a_child.convert_to_binary_join_tree_spatial())        
+            print ''
+            print 'CALL FOR CHILD'
+            self.children_list.append(a_child.convert_to_binary_join_tree_spatial()) 
+            print 'BACK FROM CHILD CALL'
         
         #Step2: process myself
         print 'now process myself'
+        if True:
+                    
+            current_node = None
+            
+            #find sources that appear in spatial joins --> will come last 
+            spatial_last=[]
+            for x in self.identified_joins:
+                if x[0]=='spatial':
+                    if x[1] not in spatial_last and x[2] not in spatial_last:
+                        #ORACLE optimization to put second argument of spatial predicate first
+                        spatial_last.append(x[2])
+                        spatial_last.append(x[1])
+                    elif x[1] not in spatial_last:
+                        #add it immediately after the second table in order
+                        pos=spatial_last.index(x[2])
+                        spatial_last_sav= spatial_last[:pos]
+                        spatial_last_sav.append(x[1])
+                        spatial_last_sav.append(spatial_last[pos+1:])
+                        spatial_last=spatial_last_sav
+                    elif x[2] not in spatial_last:
+                        #add it immediately before the first table in order
+                        pos=spatial_last.index(x[1])
+                        spatial_last_sav= spatial_last[:pos-1]
+                        spatial_last_sav.append(x[2])
+                        spatial_last_sav.append(spatial_last[pos:])
+                        spatial_last=spatial_last_sav 
+                    print 'SPATIAL_LAST............',spatial_last
+            # now build the list of sources that don't participate in spatial joins
+            nonspatial_first=[]
+            for x in self.identified_joins:
+                if x[0]=='nonspatial': 
+                    if x[1] not in spatial_last and x[1] not in nonspatial_first:
+                        nonspatial_first.append(x[1])
+                    if x[2] not in spatial_last and x[2] not in nonspatial_first:
+                        nonspatial_first.append(x[2])
+                    print 'NONSPATIAL FIRST==========',nonspatial_first
+            
+            # THERE MIGHT BE tables in from clause that are part of carthesian joins, add them last in the nonspatial_first
+            tmp_children_list = list(self.children_list)
+            print 'LEN',len(tmp_children_list)            
+            
+            for source in tmp_children_list:
+                if isinstance(source,TableNode) and (source.table_name not in nonspatial_first) and (source.table_alias not in nonspatial_first) and (source.table_name not in spatial_last) and (source.table_alias not in spatial_last):
+                    print 'treating a tablenode for carthesian join'
+                    if source.table_alias is None:
+                        nonspatial_first.append(source.table_name)
+                    else:
+                        nonspatial_first.append(source.table_alias)
+                elif isinstance(source,SelectProjectNode) and (source.table_alias not in nonspatial_first) and (source.table_alias not in spatial_last):
+                    nonspatial_first.append(source.table_alias)
+                    print 'treating a selectprojectnode for carthesian join'
+            
+                    
+                        
+            print 'FINAL JOIN ORDER:', nonspatial_first,spatial_last
+            
+            tmp_children_list = list(self.children_list)
+            print 'LEN',len(tmp_children_list)
+            
+            current_node = None
+
+            tmp_index = -1          
+            
+            for nsf in nonspatial_first:
+                
+                print 'advancing in nsf...'
+                
+                for a_child in tmp_children_list:
+                    
+                    print 'ALIAS',a_child.table_alias
+                    if (isinstance(a_child,TableNode)and (a_child.table_name==nsf or a_child.table_alias==nsf) ) or (isinstance(a_child,SelectProjectNode) and a_child.table_alias==nsf):
+                        
+                        print 'got it from children list'
+                        
+                        if current_node is None:
+        
+                            current_node = a_child
+                            print 'was a none current_node'
+        
+                        else:
+                            
+                            a_join_node = TwoJoinNode()
+                            
+                            print 'built a twojoinnode'
+        
+                            a_join_node.source = self
+                            a_join_node.join_explicit = self.join_explicit
+                            
+                            a_join_node.left_child = copy.deepcopy(current_node)
+                            a_join_node.left_child.parent = a_join_node
+                            a_join_node.right_child = copy.deepcopy(a_child)
+                            a_join_node.right_child.parent = a_join_node
+        
+                            for x in current_node.table_list:
+                                if x not in a_join_node.table_list:
+                                    a_join_node.table_list.append(x)
+                            a_join_node.table_alias_dict = current_node.table_alias_dict
         
         
-        return
+                            for x in a_child.table_alias_dict.keys():
+                                if x not in a_join_node.table_alias_dict.keys():
+                                    a_join_node.table_alias_dict[x] = a_child.table_alias_dict[x]
+                                else:
+                                    exit(29)
+        
+        
+                            for x in a_child.table_list:
+                                if x not in a_join_node.table_list:
+                                    a_join_node.table_list.append(x)
+                            
+                            if self.join_explicit == True:
+        
+                                tmp_list_join_condition = self.join_info[0]
+                                tmp_list_join_type = self.join_info[1]
+        
+        
+                                a_join_node.join_condition = tmp_list_join_condition[tmp_index]
+                                a_join_node.join_type = tmp_list_join_type[tmp_index]
+        
+                            current_node = a_join_node
+        
+                        tmp_index += 1
+                        
+            for sf in spatial_last:
+                                
+                print 'advancing in sf...'
+                
+                for a_child in tmp_children_list:
+                    
+                    print 'ALIAS',a_child.table_alias
+                    if (isinstance(a_child,TableNode)and (a_child.table_name==sf or a_child.table_alias==sf) ) or (isinstance(a_child,SelectProjectNode) and a_child.table_alias==sf):
+                        
+                        print 'got it from children list '+a_child.table_alias
+                        
+                        if current_node is None:
+        
+                            current_node = a_child
+                            print 'was a none current_node'
+        
+                        else:
+                            
+                            a_join_node = TwoJoinSpatialNode()
+                            
+                            print 'built a twojoinspatialnode'
+                            print ''
+        
+                            a_join_node.source = self
+                            a_join_node.join_explicit = self.join_explicit
+                            
+                            a_join_node.left_child = copy.deepcopy(current_node)
+                            a_join_node.left_child.parent = a_join_node
+                            a_join_node.right_child = copy.deepcopy(a_child)
+                            a_join_node.right_child.parent = a_join_node
+        
+                            for x in current_node.table_list:
+                                if x not in a_join_node.table_list:
+                                    a_join_node.table_list.append(x)
+                            a_join_node.table_alias_dict = current_node.table_alias_dict
+        
+        
+                            for x in a_child.table_alias_dict.keys():
+                                if x not in a_join_node.table_alias_dict.keys():
+                                    a_join_node.table_alias_dict[x] = a_child.table_alias_dict[x]
+                                else:
+                                    exit(29)
+        
+        
+                            for x in a_child.table_list:
+                                if x not in a_join_node.table_list:
+                                    a_join_node.table_list.append(x)
+                            
+                            if self.join_explicit == True:
+        
+                                tmp_list_join_condition = self.join_info[0]
+                                tmp_list_join_type = self.join_info[1]
+        
+        
+                                a_join_node.join_condition = tmp_list_join_condition[tmp_index]
+                                a_join_node.join_type = tmp_list_join_type[tmp_index]
+        
+                            current_node = a_join_node
+        
+                        tmp_index += 1                
+                            
+                            
+            
+            
+            
+            current_node.select_list = copy.deepcopy(self.select_list)
+            current_node.where_condition = copy.deepcopy(self.where_condition)
+
+            if self.join_explicit == False:
+                current_node.join_condition = copy.deepcopy(self.where_condition)            
+        
+            return current_node
+        
 
     def convert_to_binary_join_tree(self):
 
@@ -1554,7 +1825,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
 
     def identify_join_types(self):
         print 'in multiplejoinnode...processing identify_join_types'
-        
+        self.identified_joins=[]
         # self.join_info[0] is a FirstStepWhereCondition , corresponding to the WHERE clause of the query/subquery that MultipleJOinNode refers to
         self.join_info[0].where_condition_exp.debug()
         
@@ -3022,8 +3293,8 @@ def build_plan_tree_from_a_select_node(a_query_node):
     print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'
     t2.identify_join_types()
 
-    t3 = t2.convert_to_binary_join_tree() #was in YSmart
-    #t3 = t2.convert_to_binary_join_tree_spatial()
+    #t3 = t2.convert_to_binary_join_tree() #was in YSmart
+    t3 = t2.convert_to_binary_join_tree_spatial()
     t3.debug(0)
     print '===================CONVERT TO BINARY TREE SPATIAL==================='
     
