@@ -276,7 +276,7 @@ class YExpTool:
         first_token = input_token_list[0]
         t_n = first_token["name"]
         if t_n == "ID" or t_n in self.token_list_agg_func or t_n in self.token_list_spatial_funct:
-            print 'IT IS  A FUNCTION!!'
+            #print 'IT IS  A FUNCTION!!'
             #func(a,b,c)
             func_name = first_token["content"]
             #we process a, b,c ...
@@ -288,7 +288,7 @@ class YExpTool:
                 print >>sys.stderr,input_token_list
                 exit(29)
 
-            print 'parameters processing.....'
+            #print 'parameters processing.....'
             sub_level = 0
              
             t_para_list = []
@@ -318,22 +318,22 @@ class YExpTool:
                     
                     a_para_list = []
             
-            print 'lista parametrilor'
+            #print 'lista parametrilor'
             #print a_para_list
             t_para_list.append(a_para_list)
-            print t_para_list
+            #print t_para_list
 
             para_exp_list = []
             for ap in t_para_list:
-                print '^^^^^^ chem iar pentru:'
-                print ap
+                #print '^^^^^^ chem iar pentru:'
+                #print ap
                 #print '^^^^^^^^^^^^^^^^^^^'
                 para_exp_list.append(self.convert_token_list_to_exp_tree(ap))
-                print '^^^^^^^^^^^^^^^^^^^'
+                #print '^^^^^^^^^^^^^^^^^^^'
             
-            print 'READY TO RETURN !!!'
+            #print 'READY TO RETURN !!!'
             if t_n in self.token_list_spatial_funct:
-                print ':::::::::::::::::::returns a yspatialfuncexp'
+                #print ':::::::::::::::::::returns a yspatialfuncexp'
                 return YSpatialFuncExp(func_name, para_exp_list)
             
             return YFuncExp(func_name, para_exp_list)
@@ -443,10 +443,27 @@ class YFuncExp(YExpBase):
                 return False
 
         return True
+    
+    def debug(self):
+        print 'I AM A YFUNCEXP WITH NAME='+self.func_name+' AND I HAVE '
+        print len(self.parameter_list)
+        print 'CHILDREN:'
+        for p in self.parameter_list:
+            p.debug()
+        return
+        
 
 class YSpatialFuncExp(YFuncExp):
     def __init__(self, input_func_name, input_parameter_list):
-        YFuncExp.__init__(self,input_func_name, input_parameter_list)    
+        YFuncExp.__init__(self,input_func_name, input_parameter_list)  
+        
+    def debug(self):
+        print 'I AM A YSPATIALFUNCEXP WITH NAME='+self.func_name+' AND I HAVE '
+        print len(self.parameter_list)
+        print 'CHILDREN:'
+        for p in self.parameter_list:
+            p.debug()
+        return    
     
 class YConsExp(YExpBase):
     
@@ -485,10 +502,20 @@ class YConsExp(YExpBase):
             return False
 
         return True
+    
+    def debug(self):
+        print 'I AM A YCONSEXP WITH TYPE='+self.cons_type
+        
+        return    
 
 class YSpatialConsExp(YConsExp):
     def __init__(self, input_cons_value, input_cons_type):
         YConsExp.__init__(self,input_cons_value, input_cons_type)
+    
+    def debug(self):
+        print 'I AM A YSPATIALCONSEXP WITH TYPE='+self.cons_type
+        
+        return     
         
 class YRawColExp(YExpBase):
 
@@ -547,6 +574,11 @@ class YRawColExp(YExpBase):
             return False
 
         return True
+    
+    def debug(self):
+        print 'I AM A YRAWCOLEXP WITH TABLENAME='+self.table_name+' AND COLUMN_NAME='+self.column_name
+        
+        return       
 
 ############################################################################################
 ############################################################################################
@@ -669,6 +701,12 @@ class QueryPlanTreeBase(object):
     def convert_to_binary_join_tree(self):
 
         return self
+    
+    def convert_to_binary_join_tree_spatial(self):
+        return self
+    
+    def identify_join_types(self):
+        return self    
 
 
     def debug(self, level):
@@ -695,6 +733,16 @@ class OrderByNode(QueryPlanTreeBase):
         self.child = self.child.convert_to_binary_join_tree()
         self.child.parent = self
         return super(OrderByNode, self).convert_to_binary_join_tree()
+    
+    def convert_to_binary_join_tree_spatial(self):
+        self.child = self.child.convert_to_binary_join_tree_spatial()
+        self.child.parent = self
+        return super(OrderByNode, self).convert_to_binary_join_tree_spatial()        
+    
+    def identify_join_types(self):
+        print 'in orderbynode, call identify_join_types for its child'
+        self.child.identify_join_types()
+        return
 
     def get_pk(self):
         return []
@@ -752,6 +800,16 @@ class GroupByNode(QueryPlanTreeBase):
         self.child = self.child.convert_to_binary_join_tree()
         self.child.parent = self
         return super(GroupByNode, self).convert_to_binary_join_tree()
+    
+    def convert_to_binary_join_tree_spatial(self):
+        self.child = self.child.convert_to_binary_join_tree_spatial()
+        self.child.parent = self
+        return super(GroupByNode, self).convert_to_binary_join_tree_spatial()     
+    
+    def identify_join_types(self):
+        print 'in groupbynode, call identify_join_types for its child'
+        self.child.identify_join_types()
+        return    
 
 # the get_pk function should be called after generating the index
 ### fix me here: need to add more choices for the pk_list
@@ -861,6 +919,16 @@ class SelectProjectNode(QueryPlanTreeBase):
         self.child.parent = self
 
         return super(SelectProjectNode,self).convert_to_binary_join_tree()
+    
+    def convert_to_binary_join_tree_spatial(self):
+        self.child = self.child.convert_to_binary_join_tree_spatial()
+        self.child.parent = self
+        return super(SelectProjectNode,self).convert_to_binary_join_tree_spatial()    
+    
+    def identify_join_types(self):
+        print 'in selectprojectnode, call identify_join_types for its child'
+        self.child.identify_join_types()
+        return    
 
     def get_pk(self):
         return self.child.get_pk()
@@ -926,6 +994,9 @@ class TableNode(QueryPlanTreeBase):
 
     def adjust_index(self,exp_list,table_name):
         return
+    
+    def identify_join_types(self):
+        return
 
     def debug(self, level):
 
@@ -983,6 +1054,14 @@ class TwoJoinNode(QueryPlanTreeBase):
     def convert_to_binary_join_tree(self):
         print >>sys.stderr,"WRONG"
         exit(29)
+    
+    def convert_to_binary_join_tree_spatial(self):
+        print >>sys.stderr,"WRONG in convert_to_binary_join_tree_spatial"
+        exit(29)    
+    
+    def identify_join_types(self):
+        print >>sys.stderr,"WRONG in identify_join_types"
+        exit(29)    
 
 # the get_pk function should be called after generating the index
     def get_pk(self):
@@ -1141,6 +1220,8 @@ class MultipleJoinNode(QueryPlanTreeBase):
     join_explicit = None
     join_info = None
     children_list = None
+    
+    identified_joins=[] #a list of lists for identified joins
 
     def __init__(self):
         super(MultipleJoinNode, self).__init__()
@@ -1165,6 +1246,24 @@ class MultipleJoinNode(QueryPlanTreeBase):
             self.children_list.append(a_child.release_group_by())
 
         return super(MultipleJoinNode,self).release_group_by()
+    
+    def convert_to_binary_join_tree_spatial(self):
+        
+        print 'begin convert to binary tree spatial'
+        print self.identified_joins
+        
+        #Step1: process children
+        tmp_list = list(self.children_list)
+        self.children_list = []
+
+        for a_child in tmp_list:
+            self.children_list.append(a_child.convert_to_binary_join_tree_spatial())        
+        
+        #Step2: process myself
+        print 'now process myself'
+        
+        
+        return
 
     def convert_to_binary_join_tree(self):
 
@@ -1239,7 +1338,267 @@ class MultipleJoinNode(QueryPlanTreeBase):
                 current_node.join_condition = copy.deepcopy(self.where_condition)
 
             return current_node
+    
+    def utility_identify_join_types(self,a_cond):
+        
+        tmp_children_list = list(self.children_list)
+        from_names=[]
+        
+        for chil in tmp_children_list:
+            if isinstance(chil,TableNode):
+                from_names.append(chil.table_name)
+        
+        #print 'FROM_NAMES:'
+        #print from_names
+        
+        #case one: non-spatial join condition
+        if isinstance(a_cond.parameter_list[0],YRawColExp) and isinstance(a_cond.parameter_list[1],YRawColExp):
+            #print 'maybe.. a non-spatial join cond'
+            noqualif1=False
+            noqualif2=False
+            
+            #IF THERE IS NO ALIAS/NO TABLE NAME find it in data dictionary
+            if a_cond.parameter_list[0].table_name=='':
+                #print 'no qualif for first param column'
+                for c in from_names:
+                    for x in global_table_dict[c].column_list:
+                        if x.column_name == a_cond.parameter_list[0].column_name:
+                            print 'FOUND IT!'+c
+                            a_cond.parameter_list[0].table_name=c
+                            noqualif1=True
+                            break
+                        
+            if a_cond.parameter_list[1].table_name=='':
+                #print 'no qualif for second param column'
+                for c in from_names:
+                    for x in global_table_dict[c].column_list:
+                        if x.column_name == a_cond.parameter_list[1].column_name:
+                            print 'FOUND IT!'+c
+                            a_cond.parameter_list[1].table_name=c
+                            noqualif2=True
+                            break            
+            
+            
+            if a_cond.parameter_list[0].table_name != a_cond.parameter_list[1].table_name:
+                print 'REGISTERED A NONSPATIAL JOIN between tables:'+a_cond.parameter_list[0].table_name+' and '+a_cond.parameter_list[1].table_name
+                
+                an_elem=[] #type,alias1, alias2, join condition, instance of node for alias 1, instance of node for alias 2
+                an_elem.append('nonspatial')
+                an_elem.append(a_cond.parameter_list[0].table_name)
+                an_elem.append(a_cond.parameter_list[1].table_name)
+                an_elem.append(a_cond.parameter_list[0].table_name+'.'+a_cond.parameter_list[0].column_name+' '+a_cond.func_name+' '+a_cond.parameter_list[1].table_name+'.'+a_cond.parameter_list[1].column_name+'')
+                
+                #print '.............get instance for first parameter........'
+                #print self.table_alias_dict.keys()
+                
+                
+                for a_child in tmp_children_list:
+                    if isinstance(a_child,TableNode):
+                        if noqualif1==False:
+                            #print '1st: a table node:'+a_child.table_name
+                            if a_cond.parameter_list[0].table_name in self.table_alias_dict.keys():
+                                real_name=self.table_alias_dict[a_cond.parameter_list[0].table_name]
+                                #print 'compared to '+real_name
+                                if a_child.table_name==real_name:
+                                    #print 'append a_child'
+                                    an_elem.append(a_child)
+                                    break;
+                        else:
+                            if a_child.table_name==a_cond.parameter_list[0].table_name:
+                                #print 'append a_child'
+                                an_elem.append(a_child)
+                                break;                            
+                            
+                    elif isinstance(a_child,SelectProjectNode):
+                        #print '1st: a subquery'
+                        if a_child.table_alias==a_cond.parameter_list[0].table_name:
+                            #print 'append a_child'
+                            an_elem.append(a_child)
+                                                               
+                
+                #print '.............get instance for second parameter........'
+                
+                for a_child in tmp_children_list:
+                    if isinstance(a_child,TableNode):
+                        if noqualif2==False:
+                            #print '2nd: a table node:'+a_child.table_name
+                            if a_cond.parameter_list[1].table_name in self.table_alias_dict.keys():
+                                
+                                real_name=self.table_alias_dict[a_cond.parameter_list[1].table_name]
+                                #print 'compared to '+real_name
+                                if a_child.table_name==real_name:
+                                    #print 'append a_child'
+                                    an_elem.append(a_child)
+                                    break
+                        else:
+                            if a_child.table_name==a_cond.parameter_list[1].table_name:
+                                #print 'append a_child'
+                                an_elem.append(a_child)
+                                break;
+                            
+                    elif isinstance(a_child,SelectProjectNode):
+                        #print '2nd: a subquery'
+                        
+                        if str(a_child.table_alias)==a_cond.parameter_list[1].table_name:
+                            an_elem.append(a_child)
+                                                            
+                
+                print an_elem
+                return an_elem
+        #case two: spatial join cond
+        elif isinstance(a_cond.parameter_list[0],YSpatialFuncExp) and isinstance(a_cond.parameter_list[1],YConsExp):
+            
+            
+            #print 'maybe.. a spatial join cond'
+            noqualif1=False
+            noqualif2=False            
+            
+            
+            if a_cond.parameter_list[0].func_name in ['ST_CONTAINS','ST_CROSSES','ST_DISJOINT','ST_EQUALS','ST_INTERSECTS','ST_OVERLAPS','ST_TOUCHES','ST_WITHIN'] and isinstance(a_cond.parameter_list[0].parameter_list[0],YSpatialConsExp)==False and isinstance(a_cond.parameter_list[0].parameter_list[1],YSpatialConsExp)==False:
+                print 'REGISTERED A SPATIAL JOIN '
+                an_elem=[] #type,alias1, alias2, join condition, instance of node for alias 1, instance of node for alias 2
+                an_elem.append('spatial')
+                
+                if isinstance(a_cond.parameter_list[0].parameter_list[0],YRawColExp):
+                    #print 'a column'
+                    if a_cond.parameter_list[0].parameter_list[0].table_name=='':
+                        #print 'no qualif for first param column'
+                        for c in from_names:
+                            for x in global_table_dict[c].column_list:
+                                if x.column_name == a_cond.parameter_list[0].parameter_list[0].column_name:
+                                    print 'FOUND IT!'+c
+                                    an_elem.append(c)
+                                    noqualif1=True
+                                    break
+                    else:
+                        an_elem.append(a_cond.parameter_list[0].parameter_list[0].table_name)
+                    
+                    
+                    
+                
+                if isinstance(a_cond.parameter_list[0].parameter_list[1],YRawColExp):
+                    #print 'a column'
+                    
+                    if a_cond.parameter_list[0].parameter_list[1].table_name=='':
+                        #print 'no qualif for second param column'
+                        for c in from_names:
+                            for x in global_table_dict[c].column_list:
+                                if x.column_name == a_cond.parameter_list[0].parameter_list[1].column_name:
+                                    print 'FOUND IT!'+c
+                                    an_elem.append(c)
+                                    noqualif2=True
+                                    break
+                    else:
+                        an_elem.append(a_cond.parameter_list[0].parameter_list[1].table_name)
+                                
+                    
+                
+                an_elem.append(''+a_cond.parameter_list[0].func_name+'('+an_elem[1]+'.'+a_cond.parameter_list[0].parameter_list[0].column_name+','+an_elem[2]+'.'+a_cond.parameter_list[0].parameter_list[1].column_name+') '+a_cond.func_name+' '+a_cond.parameter_list[1].cons_value)
+                
+                #print '.............get instance for first parameter........'
+                #print self.table_alias_dict.keys()
+                
+                
+                for a_child in tmp_children_list:
+                    if isinstance(a_child,TableNode):
+                        if noqualif1==False:
+                            #print '1st: a table node:'+a_child.table_name
+                            if a_cond.parameter_list[0].parameter_list[0].table_name in self.table_alias_dict.keys():
+                                real_name=self.table_alias_dict[a_cond.parameter_list[0].parameter_list[0].table_name]
+                                #print 'compared to '+real_name
+                                if a_child.table_name==real_name:
+                                    #print 'append a_child'
+                                    an_elem.append(a_child)
+                                    break;
+                        else:
+                            if a_child.table_name==an_elem[1]:
+                                #print 'append a_child'
+                                an_elem.append(a_child)
+                                break;                            
+                            
+                    elif isinstance(a_child,SelectProjectNode):
+                        #print '1st: a subquery'
+                        if a_child.table_alias==a_cond.parameter_list[0].parameter_list[0].table_name:
+                            #print 'append a_child'
+                            an_elem.append(a_child)
+                                                               
+                
+                #print '.............get instance for second parameter........'
+                
+                for a_child in tmp_children_list:
+                    if isinstance(a_child,TableNode):
+                        if noqualif2==False:
+                            #print '2nd: a table node:'+a_child.table_name
+                            if a_cond.parameter_list[0].parameter_list[1].table_name in self.table_alias_dict.keys():
+                                
+                                real_name=self.table_alias_dict[a_cond.parameter_list[0].parameter_list[1].table_name]
+                                #print 'compared to '+real_name
+                                if a_child.table_name==real_name:
+                                    #print 'append a_child'
+                                    an_elem.append(a_child)
+                                    break
+                        else:
+                            if a_child.table_name==an_elem[2]:
+                                #print 'append a_child'
+                                an_elem.append(a_child)
+                                break;                             
+                    elif isinstance(a_child,SelectProjectNode):
+                        #print '2nd: a subquery'
+                        #print 'qqqqqqqqqqqqqq'+str(a_child.table_alias)
+                        if str(a_child.table_alias)==a_cond.parameter_list[0].parameter_list[1].table_name:
+                            an_elem.append(a_child)
+                
+                            
+                print an_elem        
+                return an_elem
 
+    def identify_join_types(self):
+        print 'in multiplejoinnode...processing identify_join_types'
+        
+        # self.join_info[0] is a FirstStepWhereCondition , corresponding to the WHERE clause of the query/subquery that MultipleJOinNode refers to
+        self.join_info[0].where_condition_exp.debug()
+        
+        print '   '
+        
+        tmp_children_list = list(self.children_list)
+        
+        # case 1: multiple conditions in WHERE --> AND - EQ
+        # case 2: one condition in WHERE --> EQ
+        if isinstance(self.join_info[0].where_condition_exp,YFuncExp):
+            #print 'ok'+self.join_info[0].where_condition_exp.func_name
+            if self.join_info[0].where_condition_exp.func_name in ['AND','OR']:
+                for a_cond in self.join_info[0].where_condition_exp.parameter_list:
+                    if isinstance(a_cond,YFuncExp):
+                        #print 'a cond is a function as well with name'+a_cond.func_name
+                        # if we want non-equijoins, to use below 
+                        # if a_cond.func_name in ["EQ", "GTH", "LTH", "NOT_EQ","GEQ","LEQ"]:
+                        if a_cond.func_name=='EQ':
+                            #print 'it is an EQ function'
+                            ret_elem=self.utility_identify_join_types(a_cond)
+                            if ret_elem is not None:
+                                self.identified_joins.append(ret_elem)
+                            
+            
+            #case when there is only one condition in WHERE
+            elif self.join_info[0].where_condition_exp.func_name=='EQ':
+                # if we want non-equijoins, to use  above
+                # if self.join_info[0].where_condition_exp.func_name in ["EQ", "GTH", "LTH", "NOT_EQ","GEQ","LEQ"]:
+                #print 'new!'
+                a_cond=self.join_info[0].where_condition_exp
+                ret_elem=self.utility_identify_join_types(a_cond)
+                if ret_elem is not None:
+                    self.identified_joins.append(ret_elem)                
+                
+                        
+            print '   '
+            #call for the multiplejoinnode's children
+            for a_ch in self.children_list:
+                a_ch.identify_join_types()
+        else:
+            print 'wrong!'
+        
+        return
+    
     def debug(self, level):
 
         pb = ""
@@ -2046,11 +2405,11 @@ class FirstStepWhereCondition:
 
 
         c = real_where_condition
-        print '~~~~~~ CALL ~~~~~~~'
-        print c[0].tokenname
+        #print '~~~~~~ CALL ~~~~~~~'
+        #print c[0].tokenname
         if len(c) == 1:
             #it must be and or or
-            print 'len(c)==1'
+            #print 'len(c)==1'
 
 
             c = c[0]
@@ -2081,6 +2440,7 @@ class FirstStepWhereCondition:
                 
                 yfc = YFuncExp(func_name, pl)
                 
+                yfc.debug() # prints the hierarchy of expressions in WHERE clause
                 return yfc
                 
             elif my_first_child.tokenname == 'T_RESERVED' and ((my_first_child.content.upper() == 'AND') or (my_first_child.content.upper() == 'OR')):   
@@ -2633,6 +2993,9 @@ def get_the_select_node_from_a_file(filename):
     return a_query_node
 
 
+    
+
+
 #This function processes a T_SELECT node
 def build_plan_tree_from_a_select_node(a_query_node):
     
@@ -2654,10 +3017,15 @@ def build_plan_tree_from_a_select_node(a_query_node):
     t2 = t1.release_group_by()
     t2.debug(0)
     print '===================RELEASE GROUP BY ==================='
+    
+    #identify join types
+    print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'
+    t2.identify_join_types()
 
-    t3 = t2.convert_to_binary_join_tree()
+    t3 = t2.convert_to_binary_join_tree() #was in YSmart
+    #t3 = t2.convert_to_binary_join_tree_spatial()
     t3.debug(0)
-    print '===================CONVERT TO BINARY TREE==================='
+    print '===================CONVERT TO BINARY TREE SPATIAL==================='
     
     return t3
 
@@ -4901,5 +5269,5 @@ if __name__ == '__main__':
     
     #OTHER spatial
     #schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/fisschema.schema'
-    #xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/Q_XML.xml'
+    #xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/Q2_XML.xml'
     ysmart_tree_gen(schema,xml_file)
