@@ -80,14 +80,14 @@ class YExpTool:
 
         
         if len_input_token_list == 4:
-            print '4 tokeni'
+            
             first_token = input_token_list[0]
             second_token = input_token_list[1]
             third_token = input_token_list[2]    
             fourth_token= input_token_list[3]
             print 
             if first_token["content"]=='ST_GEOMETRY' and first_token["name"]=='T_RESERVED':
-                print 'const spatiala'
+                
                 return YSpatialConsExp(third_token,"ST_GEOMETRY")
         
         if len_input_token_list == 3:
@@ -703,7 +703,6 @@ class QueryPlanTreeBase(object):
         return self
     
     def convert_to_binary_join_tree_spatial(self):
-        print 'convert_to_binary_join_tree_spatial in QUERYPLANBASETREENODE'
         return self
     
     def identify_join_types(self):
@@ -738,11 +737,9 @@ class OrderByNode(QueryPlanTreeBase):
     def convert_to_binary_join_tree_spatial(self):
         self.child = self.child.convert_to_binary_join_tree_spatial()
         self.child.parent = self
-        print 'convert_to_binary_join_tree_spatial in ORDERBYNODE'
         return super(OrderByNode, self).convert_to_binary_join_tree_spatial()        
     
     def identify_join_types(self):
-        print 'in orderbynode, call identify_join_types for its child'
         self.child.identify_join_types()
         return
 
@@ -806,11 +803,9 @@ class GroupByNode(QueryPlanTreeBase):
     def convert_to_binary_join_tree_spatial(self):
         self.child = self.child.convert_to_binary_join_tree_spatial()
         self.child.parent = self
-        print 'convert_to_binary_join_tree_spatial in GROUPBYNODE'
         return super(GroupByNode, self).convert_to_binary_join_tree_spatial()     
     
     def identify_join_types(self):
-        print 'in groupbynode, call identify_join_types for its child'
         self.child.identify_join_types()
         return    
 
@@ -926,11 +921,9 @@ class SelectProjectNode(QueryPlanTreeBase):
     def convert_to_binary_join_tree_spatial(self):
         self.child = self.child.convert_to_binary_join_tree_spatial()
         self.child.parent = self
-        print 'convert_to_binary_join_tree_spatial in SELECTPROJECTNODE'
         return super(SelectProjectNode,self).convert_to_binary_join_tree_spatial()    
     
     def identify_join_types(self):
-        print 'in selectprojectnode, call identify_join_types for its child'
         self.child.identify_join_types()
         return    
 
@@ -1004,7 +997,6 @@ class TableNode(QueryPlanTreeBase):
         return
     
     def convert_to_binary_join_tree_spatial(self):
-        print 'convert_to_binary_join_tree_spatial in TABLENODE'+self.table_name
         return self    
 
     def debug(self, level):
@@ -1324,21 +1316,20 @@ class MultipleJoinNode(QueryPlanTreeBase):
     
     def convert_to_binary_join_tree_spatial(self):
         
-        print 'begin convert to binary tree spatial'
-        print self.identified_joins
+        
+        #print self.identified_joins
         
         #Step1: process children
         tmp_list = list(self.children_list)
         self.children_list = []
 
         for a_child in tmp_list:
-            print ''
-            print 'CALL FOR CHILD'
+            
             self.children_list.append(a_child.convert_to_binary_join_tree_spatial()) 
-            print 'BACK FROM CHILD CALL'
+            
         
         #Step2: process myself
-        print 'now process myself'
+        #print 'now process myself'
         if True:
                     
             current_node = None
@@ -1365,7 +1356,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
                         spatial_last_sav.append(x[2])
                         spatial_last_sav.append(spatial_last[pos:])
                         spatial_last=spatial_last_sav 
-                    print 'SPATIAL_LAST............',spatial_last
+                    
             # now build the list of sources that don't participate in spatial joins
             nonspatial_first=[]
             for x in self.identified_joins:
@@ -1374,29 +1365,29 @@ class MultipleJoinNode(QueryPlanTreeBase):
                         nonspatial_first.append(x[1])
                     if x[2] not in spatial_last and x[2] not in nonspatial_first:
                         nonspatial_first.append(x[2])
-                    print 'NONSPATIAL FIRST==========',nonspatial_first
+                    
             
             # THERE MIGHT BE tables in from clause that are part of carthesian joins, add them last in the nonspatial_first
             tmp_children_list = list(self.children_list)
-            print 'LEN',len(tmp_children_list)            
+                    
             
             for source in tmp_children_list:
                 if isinstance(source,TableNode) and (source.table_name not in nonspatial_first) and (source.table_alias not in nonspatial_first) and (source.table_name not in spatial_last) and (source.table_alias not in spatial_last):
-                    print 'treating a tablenode for carthesian join'
+                    #print 'treating a tablenode for carthesian join'
                     if source.table_alias is None:
                         nonspatial_first.append(source.table_name)
                     else:
                         nonspatial_first.append(source.table_alias)
                 elif isinstance(source,SelectProjectNode) and (source.table_alias not in nonspatial_first) and (source.table_alias not in spatial_last):
                     nonspatial_first.append(source.table_alias)
-                    print 'treating a selectprojectnode for carthesian join'
+                    #print 'treating a selectprojectnode for carthesian join'
             
                     
                         
-            print 'FINAL JOIN ORDER:', nonspatial_first,spatial_last
+            #print 'FINAL JOIN ORDER:', nonspatial_first,spatial_last
             
             tmp_children_list = list(self.children_list)
-            print 'LEN',len(tmp_children_list)
+            
             
             current_node = None
 
@@ -1404,26 +1395,25 @@ class MultipleJoinNode(QueryPlanTreeBase):
             
             for nsf in nonspatial_first:
                 
-                print 'advancing in nsf...'
+                
                 
                 for a_child in tmp_children_list:
                     
-                    print 'ALIAS',a_child.table_alias
+                    
                     if (isinstance(a_child,TableNode)and (a_child.table_name==nsf or a_child.table_alias==nsf) ) or (isinstance(a_child,SelectProjectNode) and a_child.table_alias==nsf):
                         
-                        print 'got it from children list'
+                        
                         
                         if current_node is None:
         
                             current_node = a_child
-                            print 'was a none current_node'
+                            
         
                         else:
                             
                             a_join_node = TwoJoinNode()
                             
-                            print 'built a twojoinnode'
-        
+                           
                             a_join_node.source = self
                             a_join_node.join_explicit = self.join_explicit
                             
@@ -1464,27 +1454,24 @@ class MultipleJoinNode(QueryPlanTreeBase):
                         
             for sf in spatial_last:
                                 
-                print 'advancing in sf...'
                 
                 for a_child in tmp_children_list:
                     
-                    print 'ALIAS',a_child.table_alias
+                    
                     if (isinstance(a_child,TableNode)and (a_child.table_name==sf or a_child.table_alias==sf) ) or (isinstance(a_child,SelectProjectNode) and a_child.table_alias==sf):
                         
-                        print 'got it from children list '+a_child.table_alias
+                        
                         
                         if current_node is None:
         
                             current_node = a_child
-                            print 'was a none current_node'
+                            
         
                         else:
                             
                             a_join_node = TwoJoinSpatialNode()
                             
-                            print 'built a twojoinspatialnode'
-                            print ''
-        
+                            
                             a_join_node.source = self
                             a_join_node.join_explicit = self.join_explicit
                             
@@ -1619,8 +1606,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
             if isinstance(chil,TableNode):
                 from_names.append(chil.table_name)
         
-        #print 'FROM_NAMES:'
-        #print from_names
+        
         
         #case one: non-spatial join condition
         if isinstance(a_cond.parameter_list[0],YRawColExp) and isinstance(a_cond.parameter_list[1],YRawColExp):
@@ -1630,28 +1616,28 @@ class MultipleJoinNode(QueryPlanTreeBase):
             
             #IF THERE IS NO ALIAS/NO TABLE NAME find it in data dictionary
             if a_cond.parameter_list[0].table_name=='':
-                #print 'no qualif for first param column'
+                
                 for c in from_names:
                     for x in global_table_dict[c].column_list:
                         if x.column_name == a_cond.parameter_list[0].column_name:
-                            print 'FOUND IT!'+c
+                            
                             a_cond.parameter_list[0].table_name=c
                             noqualif1=True
                             break
                         
             if a_cond.parameter_list[1].table_name=='':
-                #print 'no qualif for second param column'
+                
                 for c in from_names:
                     for x in global_table_dict[c].column_list:
                         if x.column_name == a_cond.parameter_list[1].column_name:
-                            print 'FOUND IT!'+c
+                            
                             a_cond.parameter_list[1].table_name=c
                             noqualif2=True
                             break            
             
             
             if a_cond.parameter_list[0].table_name != a_cond.parameter_list[1].table_name:
-                print 'REGISTERED A NONSPATIAL JOIN between tables:'+a_cond.parameter_list[0].table_name+' and '+a_cond.parameter_list[1].table_name
+                #print 'REGISTERED A NONSPATIAL JOIN between tables:'+a_cond.parameter_list[0].table_name+' and '+a_cond.parameter_list[1].table_name
                 
                 an_elem=[] #type,alias1, alias2, join condition, instance of node for alias 1, instance of node for alias 2
                 an_elem.append('nonspatial')
@@ -1660,30 +1646,30 @@ class MultipleJoinNode(QueryPlanTreeBase):
                 an_elem.append(a_cond.parameter_list[0].table_name+'.'+a_cond.parameter_list[0].column_name+' '+a_cond.func_name+' '+a_cond.parameter_list[1].table_name+'.'+a_cond.parameter_list[1].column_name+'')
                 
                 #print '.............get instance for first parameter........'
-                #print self.table_alias_dict.keys()
+                
                 
                 
                 for a_child in tmp_children_list:
                     if isinstance(a_child,TableNode):
                         if noqualif1==False:
-                            #print '1st: a table node:'+a_child.table_name
+                            
                             if a_cond.parameter_list[0].table_name in self.table_alias_dict.keys():
                                 real_name=self.table_alias_dict[a_cond.parameter_list[0].table_name]
-                                #print 'compared to '+real_name
+                                
                                 if a_child.table_name==real_name:
-                                    #print 'append a_child'
+                                    
                                     an_elem.append(a_child)
                                     break;
                         else:
                             if a_child.table_name==a_cond.parameter_list[0].table_name:
-                                #print 'append a_child'
+                                
                                 an_elem.append(a_child)
                                 break;                            
                             
                     elif isinstance(a_child,SelectProjectNode):
-                        #print '1st: a subquery'
+                        
                         if a_child.table_alias==a_cond.parameter_list[0].table_name:
-                            #print 'append a_child'
+                            
                             an_elem.append(a_child)
                                                                
                 
@@ -1692,29 +1678,29 @@ class MultipleJoinNode(QueryPlanTreeBase):
                 for a_child in tmp_children_list:
                     if isinstance(a_child,TableNode):
                         if noqualif2==False:
-                            #print '2nd: a table node:'+a_child.table_name
+                            
                             if a_cond.parameter_list[1].table_name in self.table_alias_dict.keys():
                                 
                                 real_name=self.table_alias_dict[a_cond.parameter_list[1].table_name]
-                                #print 'compared to '+real_name
+                                
                                 if a_child.table_name==real_name:
-                                    #print 'append a_child'
+                                    
                                     an_elem.append(a_child)
                                     break
                         else:
                             if a_child.table_name==a_cond.parameter_list[1].table_name:
-                                #print 'append a_child'
+                                
                                 an_elem.append(a_child)
                                 break;
                             
                     elif isinstance(a_child,SelectProjectNode):
-                        #print '2nd: a subquery'
+                        
                         
                         if str(a_child.table_alias)==a_cond.parameter_list[1].table_name:
                             an_elem.append(a_child)
                                                             
                 
-                print an_elem
+                
                 return an_elem
         #case two: spatial join cond
         elif isinstance(a_cond.parameter_list[0],YSpatialFuncExp) and isinstance(a_cond.parameter_list[1],YConsExp):
@@ -1726,18 +1712,18 @@ class MultipleJoinNode(QueryPlanTreeBase):
             
             
             if a_cond.parameter_list[0].func_name in ['ST_CONTAINS','ST_CROSSES','ST_DISJOINT','ST_EQUALS','ST_INTERSECTS','ST_OVERLAPS','ST_TOUCHES','ST_WITHIN'] and isinstance(a_cond.parameter_list[0].parameter_list[0],YSpatialConsExp)==False and isinstance(a_cond.parameter_list[0].parameter_list[1],YSpatialConsExp)==False:
-                print 'REGISTERED A SPATIAL JOIN '
+                #print 'REGISTERED A SPATIAL JOIN '
                 an_elem=[] #type,alias1, alias2, join condition, instance of node for alias 1, instance of node for alias 2
                 an_elem.append('spatial')
                 
                 if isinstance(a_cond.parameter_list[0].parameter_list[0],YRawColExp):
-                    #print 'a column'
+                    
                     if a_cond.parameter_list[0].parameter_list[0].table_name=='':
-                        #print 'no qualif for first param column'
+                        
                         for c in from_names:
                             for x in global_table_dict[c].column_list:
                                 if x.column_name == a_cond.parameter_list[0].parameter_list[0].column_name:
-                                    print 'FOUND IT!'+c
+                                    
                                     an_elem.append(c)
                                     noqualif1=True
                                     break
@@ -1748,14 +1734,14 @@ class MultipleJoinNode(QueryPlanTreeBase):
                     
                 
                 if isinstance(a_cond.parameter_list[0].parameter_list[1],YRawColExp):
-                    #print 'a column'
+                    
                     
                     if a_cond.parameter_list[0].parameter_list[1].table_name=='':
-                        #print 'no qualif for second param column'
+                        
                         for c in from_names:
                             for x in global_table_dict[c].column_list:
                                 if x.column_name == a_cond.parameter_list[0].parameter_list[1].column_name:
-                                    print 'FOUND IT!'+c
+                                    
                                     an_elem.append(c)
                                     noqualif2=True
                                     break
@@ -1767,30 +1753,30 @@ class MultipleJoinNode(QueryPlanTreeBase):
                 an_elem.append(''+a_cond.parameter_list[0].func_name+'('+an_elem[1]+'.'+a_cond.parameter_list[0].parameter_list[0].column_name+','+an_elem[2]+'.'+a_cond.parameter_list[0].parameter_list[1].column_name+') '+a_cond.func_name+' '+a_cond.parameter_list[1].cons_value)
                 
                 #print '.............get instance for first parameter........'
-                #print self.table_alias_dict.keys()
+                
                 
                 
                 for a_child in tmp_children_list:
                     if isinstance(a_child,TableNode):
                         if noqualif1==False:
-                            #print '1st: a table node:'+a_child.table_name
+                            
                             if a_cond.parameter_list[0].parameter_list[0].table_name in self.table_alias_dict.keys():
                                 real_name=self.table_alias_dict[a_cond.parameter_list[0].parameter_list[0].table_name]
-                                #print 'compared to '+real_name
+                                
                                 if a_child.table_name==real_name:
-                                    #print 'append a_child'
+                                    
                                     an_elem.append(a_child)
                                     break;
                         else:
                             if a_child.table_name==an_elem[1]:
-                                #print 'append a_child'
+                                
                                 an_elem.append(a_child)
                                 break;                            
                             
                     elif isinstance(a_child,SelectProjectNode):
-                        #print '1st: a subquery'
+                        
                         if a_child.table_alias==a_cond.parameter_list[0].parameter_list[0].table_name:
-                            #print 'append a_child'
+                            
                             an_elem.append(a_child)
                                                                
                 
@@ -1799,35 +1785,38 @@ class MultipleJoinNode(QueryPlanTreeBase):
                 for a_child in tmp_children_list:
                     if isinstance(a_child,TableNode):
                         if noqualif2==False:
-                            #print '2nd: a table node:'+a_child.table_name
+                            
                             if a_cond.parameter_list[0].parameter_list[1].table_name in self.table_alias_dict.keys():
                                 
                                 real_name=self.table_alias_dict[a_cond.parameter_list[0].parameter_list[1].table_name]
-                                #print 'compared to '+real_name
+                                
                                 if a_child.table_name==real_name:
-                                    #print 'append a_child'
+                                    
                                     an_elem.append(a_child)
                                     break
                         else:
                             if a_child.table_name==an_elem[2]:
-                                #print 'append a_child'
+                                
                                 an_elem.append(a_child)
                                 break;                             
                     elif isinstance(a_child,SelectProjectNode):
-                        #print '2nd: a subquery'
-                        #print 'qqqqqqqqqqqqqq'+str(a_child.table_alias)
+                        
                         if str(a_child.table_alias)==a_cond.parameter_list[0].parameter_list[1].table_name:
                             an_elem.append(a_child)
                 
                             
-                print an_elem        
                 return an_elem
 
     def identify_join_types(self):
-        print 'in multiplejoinnode...processing identify_join_types'
+        
+        if self.join_explicit==True:
+            return
+        
+        
+        
         self.identified_joins=[]
         # self.join_info[0] is a FirstStepWhereCondition , corresponding to the WHERE clause of the query/subquery that MultipleJOinNode refers to
-        self.join_info[0].where_condition_exp.debug()
+        #self.join_info[0].where_condition_exp.debug()
         
         print '   '
         
@@ -1836,15 +1825,15 @@ class MultipleJoinNode(QueryPlanTreeBase):
         # case 1: multiple conditions in WHERE --> AND - EQ
         # case 2: one condition in WHERE --> EQ
         if isinstance(self.join_info[0].where_condition_exp,YFuncExp):
-            #print 'ok'+self.join_info[0].where_condition_exp.func_name
+            
             if self.join_info[0].where_condition_exp.func_name in ['AND','OR']:
                 for a_cond in self.join_info[0].where_condition_exp.parameter_list:
                     if isinstance(a_cond,YFuncExp):
-                        #print 'a cond is a function as well with name'+a_cond.func_name
+                        
                         # if we want non-equijoins, to use below 
                         # if a_cond.func_name in ["EQ", "GTH", "LTH", "NOT_EQ","GEQ","LEQ"]:
                         if a_cond.func_name=='EQ':
-                            #print 'it is an EQ function'
+                            
                             ret_elem=self.utility_identify_join_types(a_cond)
                             if ret_elem is not None:
                                 self.identified_joins.append(ret_elem)
@@ -1854,7 +1843,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
             elif self.join_info[0].where_condition_exp.func_name=='EQ':
                 # if we want non-equijoins, to use  above
                 # if self.join_info[0].where_condition_exp.func_name in ["EQ", "GTH", "LTH", "NOT_EQ","GEQ","LEQ"]:
-                #print 'new!'
+                
                 a_cond=self.join_info[0].where_condition_exp
                 ret_elem=self.utility_identify_join_types(a_cond)
                 if ret_elem is not None:
@@ -1992,8 +1981,7 @@ class LRBSelectNode:
                 tn.table_list.append(tn.table_alias)
                 tn.table_alias_dict[tn.table_alias] = tn.table_name
             
-            print '(in utility)a tablenode::::'
-            tn.debug(0)
+            
             
 
         elif a_input["type"] == 'SubQuery':
@@ -2020,8 +2008,7 @@ class LRBSelectNode:
             if tn.table_alias is not None and tn.table_alias not in tn.table_list:
                 tn.table_list.append(tn.table_alias)
             
-            print '(in utility)a select project node:::'
-            tn.debug(0)
+            
 
 
 ##
@@ -2063,8 +2050,7 @@ class LRBSelectNode:
             tn.join_info.append(a_input["jc_on_condition"])
             tn.join_info.append(a_input["jc_jointype_list"])
             
-            print '(in utility) a multi join node:::'
-            tn.debug(0)            
+                        
 
         else:
             print >>sys.stderr,"\n\nERROR: UNKNOWN TYPE in utility_convert_to_initial_plan_tree \n\n"
@@ -2086,7 +2072,7 @@ class LRBSelectNode:
         else:
 
             final_node = MultipleJoinNode()
-            print 'multiple join node instantiated'
+            
 
             # Step0: setup basic information
 
@@ -2121,8 +2107,8 @@ class LRBSelectNode:
             final_node.join_info = []
             final_node.join_info.append(self.where_condition)
             
-            print 'a multi join node:::'
-            final_node.debug(0)
+            
+            #final_node.debug(0)
         
         return final_node
 
@@ -2222,7 +2208,7 @@ class LRBSelectNode:
 
         tmp_scan_list = []
         for a_from_item in self.from_list[1:]:
-#            print a_from_item
+#           
 
             tmp_scan_list.append(a_from_item)
 
@@ -2238,7 +2224,7 @@ class LRBSelectNode:
 
         final_from_list.append(tmp_scan_list)
 
-#        print final_from_list
+
 
 
     #------------Step 2: convert each item---------------------------------
@@ -2391,7 +2377,7 @@ class LRBSelectNode:
 
             t_converted_from_list.append(a_r_item)
             
-        print 'checked...done process_from_list'
+        
 
 
 ############################################################################################
@@ -2528,19 +2514,17 @@ class FirstStepSelectList:
     def __init__(self, input_select_list):
 
         self.source = input_select_list
-        #print '=====1'
+        
         self.converted_str = self.utility_convert_select_list_to_str(self.source)
-        #print '=====2'
+        
 
         self.dict_exp_and_alias = {}
 
         self.tmp_exp_list = self.utility_convert_select_list_to_exp_list(self.source)
-        #print '=====3'
+        
 
         self.converted_exp_str = self.utility_convert_exp_list_to_str(self.tmp_exp_list)
-        #print '=====4'
-        #print self.converted_exp_str
-        #print '===='
+        
 
         self.realstructure = None
         
@@ -2676,13 +2660,10 @@ class FirstStepWhereCondition:
 
 
         c = real_where_condition
-        #print '~~~~~~ CALL ~~~~~~~'
-        #print c[0].tokenname
+        
         if len(c) == 1:
             #it must be and or or
-            #print 'len(c)==1'
-
-
+           
             c = c[0]
             
             if c.tokenname != 'T_COND_OR' and c.tokenname != 'T_COND_AND':
@@ -2711,7 +2692,7 @@ class FirstStepWhereCondition:
                 
                 yfc = YFuncExp(func_name, pl)
                 
-                yfc.debug() # prints the hierarchy of expressions in WHERE clause
+                #yfc.debug() # prints the hierarchy of expressions in WHERE clause
                 return yfc
                 
             elif my_first_child.tokenname == 'T_RESERVED' and ((my_first_child.content.upper() == 'AND') or (my_first_child.content.upper() == 'OR')):   
@@ -2778,14 +2759,14 @@ class FirstStepWhereCondition:
         self.realstructure = None
 
         self.converted_str = self.utility_convert_where_condition_to_str(self.source)
-        print self.converted_str
+        #print self.converted_str
 
         self.where_condition_exp = self.utility_convert_where_condition_to_exp(self.source)
-        print '*'
+        
 
         self.converted_exp_str = self.utility_convert_exp_list_to_str(self.where_condition_exp)
-        print '***'
-        print self.converted_exp_str
+        
+        #print self.converted_exp_str
 
 
 class FirstStepGroupBy:
@@ -2976,9 +2957,7 @@ class FirstStepOrderBy:
 
 def convert_a_select_tree(a_s_select_node):
 
-    #print 'in def convert_a_select_tree'
     result = LRBSelectNode()
-    #print 'dupa lrbselectnode'
     
     if a_s_select_node.tokenname != 'T_SELECT':
         print >>sys.stderr,"ERROR, not T_SELECT\n"
@@ -2987,41 +2966,34 @@ def convert_a_select_tree(a_s_select_node):
 
     for t_child in a_s_select_node.child_list:
 
-        print '==t_child.tokenname='+t_child.tokenname
+        
         if t_child.tokenname == 'RESERVED':
-            #print 'checked...done reserved'
             #this is a useless select keyword
             
             continue
         
         if t_child.tokenname == 'T_COLUMN_LIST':
             #result.select_list = t_child
-            #print 'preparing... firststep select'
             result.select_list = FirstStepSelectList(t_child)
-            print 'checked...done firststep select'
             continue
 
         if t_child.tokenname == 'T_WHERE':
             #result.where_condition = t_child
             result.where_condition = FirstStepWhereCondition(t_child)
-            print 'checked...done firststep where'
             continue
 
         if t_child.tokenname == 'T_GROUP_BY':
             #result.group_by_clause = t_child
             result.group_by_clause = FirstStepGroupBy(t_child)
-            print 'checked...done firststep groupby'
             continue
 
         if t_child.tokenname == 'T_HAVING':
             result.having_clause= FirstStepWhereCondition(t_child)
-            print 'checked...done firststep having'
             continue
 
 
         if t_child.tokenname == 'T_ORDER_BY_CLAUSE':
             result.order_by_clause = FirstStepOrderBy(t_child)
-            print 'checked...done firststep order by'
             continue
 
         
@@ -3040,7 +3012,6 @@ def convert_a_select_tree(a_s_select_node):
                     tmp_list.append(converted_select_node)
 
             result.from_list = tmp_list
-            print 'checked...done firststep from'
             continue
         
 
@@ -3257,10 +3228,7 @@ def get_the_select_node_from_a_file(filename):
             a_query_node = processNode(child)
             break
        
-    print '=====================THE TREE IN THE XML=====================' 
-    a_query_node.debug(0)
-    print '=============================================================' 
-
+    
     return a_query_node
 
 
@@ -3270,33 +3238,18 @@ def get_the_select_node_from_a_file(filename):
 #This function processes a T_SELECT node
 def build_plan_tree_from_a_select_node(a_query_node):
     
-    #print 'am ajuns aici............................................'
     r = convert_a_select_tree(a_query_node)
-    #print '..................am ajuns aici..........................'
     r.process_from_list()
-    print '____________debug converted from list ____________________'
-    r.debug_converted_from_list(0)
-    print '__________________________________________________________'
-    
-    print '================convert to initial ====================='
     t0 = r.convert_to_initial_query_plan_tree()
-    print '========================================================='
     t1 = t0.release_order_by()
-    t1.debug(0)
-    print '===================RELEASE ORDER BY ==================='
-
+    
     t2 = t1.release_group_by()
-    t2.debug(0)
-    print '===================RELEASE GROUP BY ==================='
     
     #identify join types
-    print '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'
     t2.identify_join_types()
 
     #t3 = t2.convert_to_binary_join_tree() #was in YSmart
     t3 = t2.convert_to_binary_join_tree_spatial()
-    t3.debug(0)
-    print '===================CONVERT TO BINARY TREE SPATIAL==================='
     
     return t3
 
@@ -5485,60 +5438,37 @@ def ysmart_tree_gen(schema,xml_file):
     
 
     process_schema_in_a_file(schema)    
-    debug_global_tables()
+    #debug_global_tables()
    
     thenode = get_the_select_node_from_a_file(xml_file)
     
-    
     node = build_plan_tree_from_a_select_node(thenode)
     
-    
     gen_project_list(node)
-    debug_global_tables()
     
-   
     if check_schema(node) == -1:
         return None
-        
-    print 'ok check schema'
     
-     
-
     handle_select_star(node)
     
-    
-
     gen_table_name(node)
-     
-
-    predicate_pushdown(node)
-    node.debug(0)
-    print '---------------------------predicate pushdown ready'
     
+    predicate_pushdown(node)
     
     column_filtering(node)
-    node.debug(0)
-    print '-------------------------COLUMN FILTERING ready'
-
+    
     gen_table_name(node)
     
-    print '------------------------GEN TABLE NAME AGAIN ready'
-    
-    
     gen_column_index(node)
-    
-    print 'GEN COLUMN INDEX ready'
     
     node.debug(0)
 
     return node
 
 if __name__ == '__main__':
-    #spatial
+    
     schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/21TEST.schema'
     xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/21TEST7.xml'
     
-    #OTHER spatial
-    #schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/fisschema.schema'
-    #xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/Q2_XML.xml'
+    print 'Query Plan For:',xml_file
     ysmart_tree_gen(schema,xml_file)
