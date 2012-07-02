@@ -1811,8 +1811,8 @@ class MultipleJoinNode(QueryPlanTreeBase):
         
         if self.join_explicit==True:
             return
-        
-        
+        if self.where_condition is None:
+            return        
         
         self.identified_joins=[]
         # self.join_info[0] is a FirstStepWhereCondition , corresponding to the WHERE clause of the query/subquery that MultipleJOinNode refers to
@@ -3405,6 +3405,7 @@ def __check_func_para__(exp,table_list,table_alias_dict):
             "ST_OVERLAPS":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
             "ST_TOUCHES":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
             "ST_WITHIN":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
+            "ST_DISTANCE":[2,["ST_GEOMETRY","ST_GEOMETRY"],["DECIMAL"]],
             "ST_INTERSECTION":[2,["ST_GEOMETRY","ST_GEOMETRY"],["ST_GEOMETRY"]],
             "ST_DIFFERENCE":[2,["ST_GEOMETRY","ST_GEOMETRY"],["ST_GEOMETRY"]],
             "ST_UNION":[2,["ST_GEOMETRY","ST_GEOMETRY"],["ST_GEOMETRY"]]            
@@ -5469,6 +5470,7 @@ if __name__ == '__main__':
     
     schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/21TEST.schema'
     xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/21TEST7.xml'
+    
     
     print 'Query Plan For:',xml_file
     ysmart_tree_gen(schema,xml_file)
