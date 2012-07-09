@@ -33,7 +33,51 @@ import pycallgraph
 global_table_dict = {}
 agg_func_list = ["SUM","AVG","COUNT","MAX","MIN","COUNT_DISTINCT"]
 
-
+global_func_dict = {                                                                   \
+##
+## the key is function name and for each function, there are three parameters: 
+##      1. number of parameters: 0 means any length that is greater than 0
+##      2. type of input parameters, this is a list
+##      3. type of return value, this is a list
+##
+            "SUM":[1,["INTEGER","DECIMAL"],["INTEGER","DECIMAL"]],          \
+            "COUNT":[1,["INTEGER","DECIMAL"],["INTEGER","DECIMAL"]],        \
+            "COUNT_DISTINCT":[1,["INTEGER","DECIMAL","TEXT","DATE"],["INTEGER"]],   \
+            "AVG":[1,["INTEGER","DECIMAL"],["INTEGER","DECIMAL"]],          \
+            "MAX":[1,["INTEGER","DECIMAL"],["INTEGER","DECIMAL"]],          \
+            "MIN":[1,["INTEGER","DECIMAL"],["INTEGER","DECIMAL"]],          \
+            "PLUS":[2,["INTEGER","DECIMAL"],["INTEGER","DECIMAL"]],         \
+            "MINUS":[2,["INTEGER","DECIMAL"],["INTEGER","DECIMAL"]],        \
+            "MULTIPLY":[2,["INTEGER","DECIMAL"],["INTEGER","DECIMAL"]],     \
+            "DIVIDE":[2,["INTEGER","DECIMAL"],["INTEGER","DECIMAL"]],       \
+            "AND":[0,["BOOLEAN"],["BOOLEAN"]],                              \
+            "OR":[0,["BOOLEAN"],["BOOLEAN"]],                               \
+            "GTH":[2,["INTEGER","DECIMAL","DATE","TEXT"],["BOOLEAN"]],             \
+            "LTH":[2,["INTEGER","DECIMAL","DATE","TEXT"],["BOOLEAN"]],             \
+            "EQ":[2,["INTEGER","DECIMAL","TEXT","DATE","TEXT"],["BOOLEAN"]],               \
+            "LEQ":[2,["INTEGER","DECIMAL","DATE","TEXT"],["BOOLEAN"]],             \
+            "GEQ":[2,["INTEGER","DECIMAL","DATE","TEXT"],["BOOLEAN"]],             \
+            "NOT_EQ":[2,["INTEGER","DECIMAL","DATE","TEXT"],["BOOLEAN"]],                 \
+            "IS":[2,["INTEGER","DECIMAL","TEXT","DATE"],["BOOLEAN"]],
+            "ST_AREA":[1,["ST_GEOMETRY"],["DECIMAL"]], 
+            "ST_PERIMETER":[1,["ST_GEOMETRY"],["DECIMAL"]],
+            "ST_LENGTH":[1,["ST_GEOMETRY"],["DECIMAL"]],
+            "ST_BOUNDARY":[1,["ST_GEOMETRY"],["ST_GEOMETRY"]],
+            "ST_CENTROID":[1,["ST_GEOMETRY"],["ST_GEOMETRY"]],
+            "ST_ASTEXT":[1,["ST_GEOMETRY"],["TEXT"]],
+            "ST_CONTAINS":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
+            "ST_CROSSES":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
+            "ST_DISJOINT":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
+            "ST_EQUALS":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
+            "ST_INTERSECTS":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
+            "ST_OVERLAPS":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
+            "ST_TOUCHES":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
+            "ST_WITHIN":[2,["ST_GEOMETRY","ST_GEOMETRY"],["INTEGER"]],
+            "ST_DISTANCE":[2,["ST_GEOMETRY","ST_GEOMETRY"],["DECIMAL"]],
+            "ST_INTERSECTION":[2,["ST_GEOMETRY","ST_GEOMETRY"],["ST_GEOMETRY"]],
+            "ST_DIFFERENCE":[2,["ST_GEOMETRY","ST_GEOMETRY"],["ST_GEOMETRY"]],
+            "ST_UNION":[2,["ST_GEOMETRY","ST_GEOMETRY"],["ST_GEOMETRY"]]            
+        }
 
 
 ############################################################################################
@@ -426,7 +470,9 @@ class YFuncExp(YExpBase):
         return res
     
     def get_value_type(self):
-        return "DECIMAL"
+        #get the result type from global_func_dict
+        #return "DECIMAL" --was in YSmart
+        return global_func_dict[self.func_name][2][-1]
 
     def get_exp_type(self):
         return "Func"
@@ -613,7 +659,7 @@ class QueryPlanTreeBase(object):
         self.table_alias_dict = {}
 
     def release_order_by(self):
-
+        
         if self.order_by_clause is not None:
             ob = OrderByNode()
             ob.source = self.source
@@ -630,6 +676,7 @@ class QueryPlanTreeBase(object):
 
             ob.child = self
             self.parent = ob
+            
             return ob
         else:
             return self
@@ -711,6 +758,58 @@ class QueryPlanTreeBase(object):
 
     def debug(self, level):
         pass
+    
+    def debug2(self):
+        print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+        print 'self=',self
+        if self.select_list is None:
+            print 'my select list: NONE'
+        else:
+            print 'my select list:',self.select_list.converted_exp_str, 'cu tmp_exp_list=',self.select_list.tmp_exp_list, ' i.e. the columns:'
+            for a_c in self.select_list.tmp_exp_list:
+                if isinstance(a_c,YRawColExp):
+                    print '                  ',a_c.column_name,'    ',a_c.column_type
+                
+        
+        if self.where_condition is None:
+            print 'my where      : NONE'
+        else:
+            print 'my where      :', self.where_condition.converted_exp_str 
+            #print 'pe larg ....where'
+            #print self.where_condition.where_condition_exp.parameter_list[0].parameter_list[0].parameter_list[0]
+       
+        if self.group_by_clause is None:
+            print 'my group by   : NONE'
+        else:
+            print 'my group by   :', self.group_by_clause.converted_exp_str 
+        
+        if self.order_by_clause is None:
+            print 'my order by   : NONE'
+        else:
+            print 'my order by   :', self.order_by_clause.converted_exp_str 
+        
+        if self.having_clause is None:
+            print 'my having     : NONE'
+        else:
+            print 'my having     :', self.having_clause.converted_exp_str 
+        
+     
+        
+        
+        if isinstance(self,TableNode) is False:
+            if isinstance(self,MultipleJoinNode) is False:
+                if isinstance(self,TwoJoinNode) is False:
+                    if self.child is not None:
+                        self.child.debug2()
+                else:
+                    if self.left_child is not None:
+                        self.left_child.debug2()
+                    if self.right_child is not None:
+                        self.right_child.debug2()
+            else:
+                for x in self.children_list:
+                    x.debug2()
+                        
 
 class OrderByNode(QueryPlanTreeBase):
     child = None
@@ -1039,6 +1138,8 @@ class TwoJoinNode(QueryPlanTreeBase):
     left_child = None
     right_child = None
     parent = None
+    
+    
 
     def __init__(self):
         super(TwoJoinNode, self).__init__()
@@ -1597,6 +1698,8 @@ class MultipleJoinNode(QueryPlanTreeBase):
 
             return current_node
     
+         
+    
     def utility_identify_join_types(self,a_cond):
         
         tmp_children_list = list(self.children_list)
@@ -1880,6 +1983,59 @@ class MultipleJoinNode(QueryPlanTreeBase):
         print pb, "MultipleJoinNode", "[" + sscs + "]", "[" + swc + "]"
         for a_child in self.children_list:
             a_child.debug(level + 1)
+    
+    def debug2(self):
+        print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+        print 'self=',self
+        if self.select_list is None:
+            print 'my select list: NONE'
+        else:
+            print 'my select list:',self.select_list.converted_exp_str, 'cu tmp_exp_list=',self.select_list.tmp_exp_list, ' i.e. the columns:'
+            for a_c in self.select_list.tmp_exp_list:
+                if isinstance(a_c,YRawColExp):
+                    print '                  ',a_c.column_name,'    ',a_c.column_type
+                
+        
+        if self.where_condition is None:
+            print 'my where      : NONE'
+        else:
+            print 'my where      :', self.where_condition.converted_exp_str 
+            #print 'pe larg ....where'
+            #print self.where_condition.where_condition_exp.parameter_list[0].parameter_list[0].parameter_list[0]
+       
+        if self.group_by_clause is None:
+            print 'my group by   : NONE'
+        else:
+            print 'my group by   :', self.group_by_clause.converted_exp_str 
+        
+        if self.order_by_clause is None:
+            print 'my order by   : NONE'
+        else:
+            print 'my order by   :', self.order_by_clause.converted_exp_str 
+        
+        if self.having_clause is None:
+            print 'my having     : NONE'
+        else:
+            print 'my having     :', self.having_clause.converted_exp_str 
+        
+        print 'my join clause......',self.join_info[0].converted_exp_str 
+        
+       
+        
+        
+        if isinstance(self,TableNode) is False:
+            if isinstance(self,MultipleJoinNode) is False:
+                if isinstance(self,TwoJoinNode) is False:
+                    if self.child is not None:
+                        self.child.debug2()
+                else:
+                    if self.left_child is not None:
+                        self.left_child.debug2()
+                    if self.right_child is not None:
+                        self.right_child.debug2()
+            else:
+                for x in self.children_list:
+                    x.debug2()        
 
 class CompositeNode(QueryPlanTreeBase):
 
@@ -2106,6 +2262,7 @@ class LRBSelectNode:
             final_node.join_explicit = False
             final_node.join_info = []
             final_node.join_info.append(self.where_condition)
+            
             
             
             #final_node.debug(0)
@@ -2714,7 +2871,7 @@ class FirstStepWhereCondition:
 
             if len(c) == 3:
                 #maybe this is case 2
-                print 'len(c)==3'
+                
                 
                 if c[0].tokenname == "LPAREN" and c[2].tokenname == "RPAREN" and (c[1].tokenname == "T_COND_AND" or c[1].tokenname == "T_COND_OR"):
                     #must be case 2
@@ -3241,15 +3398,20 @@ def build_plan_tree_from_a_select_node(a_query_node):
     r = convert_a_select_tree(a_query_node)
     r.process_from_list()
     t0 = r.convert_to_initial_query_plan_tree()
+    
+    
     t1 = t0.release_order_by()
     
     t2 = t1.release_group_by()
+    
     
     #identify join types
     t2.identify_join_types()
 
     #t3 = t2.convert_to_binary_join_tree() #was in YSmart
     t3 = t2.convert_to_binary_join_tree_spatial()
+    
+    
     
     return t3
 
@@ -3551,14 +3713,21 @@ def __groupby_func_check__(exp,gb_list,table_list,table_alias_dict):
     if res == -1:
         return -1
 
-    if exp.func_name in agg_func_list:
+    if exp.func_name in agg_func_list:        
         return 0
+    
+    if exp.func_name in global_func_dict.keys():
+        return 0
+    
+    
 
     for tmp in exp.parameter_list:
         if isinstance(tmp,YRawColExp):
+            
             tmp_bool = False
             for x in gb_list.groupby_exp_list:
                 if isinstance(x,YRawColExp):
+                    
                     if x.column_name == tmp.column_name and x.table_name == tmp.table_name:
                         tmp_bool = True
                         break
@@ -3566,6 +3735,7 @@ def __groupby_func_check__(exp,gb_list,table_list,table_alias_dict):
                 return -1
 
         elif isinstance(tmp,YFuncExp):
+            
             res = __groupby_func_check__(tmp,gb_list,table_list,table_alias_dict)
             if res == -1:
                 return -1
@@ -3617,7 +3787,9 @@ def __schema_groupby__(groupby_list,select_list,table_list,table_alias_dict):
                 return -1
 
         elif isinstance(exp,YFuncExp):
+            
             res = __groupby_func_check__(exp,groupby_list,table_list,table_alias_dict)
+            
             if res == -1:
                 return -1
 
@@ -4956,7 +5128,7 @@ def column_filtering(tree):
                 new_exp_list.append(new_exp)
                 new_select_dict[new_exp] = None
 
-####remove alias in the order_by_list
+                ####remove alias in the order_by_list
         tree.order_by_clause.orderby_exp_list = copy.deepcopy(new_exp_list)
 
         for exp in tree.child.select_list.tmp_exp_list:
@@ -4979,19 +5151,25 @@ def column_filtering(tree):
 
             for exp in tree.group_by_clause.groupby_exp_list:
                 if isinstance(exp,YFuncExp):
-                    col_list = []   
-                    __get_func_para__(exp,col_list)
-                    tmp_bool = False
-                    for x in col_list:
-                        for tmp in new_exp_list:
-                            if x.table_name == tmp.table_name and x.column_name == tmp.column_name:
-                                tmp_bool = True
-                                break
-
-                        if tmp_bool is False:
-                            new_exp = copy.deepcopy(x)
-                            new_exp_list.append(new_exp)
-                            new_select_dict[new_exp] = None
+                    if isinstance(exp,YSpatialFuncExp):
+                        
+                        new_exp = copy.deepcopy(exp)
+                        new_exp_list.append(new_exp)
+                        new_select_dict[new_exp] = None                        
+                    else:
+                        col_list = []   
+                        __get_func_para__(exp,col_list)
+                        tmp_bool = False
+                        for x in col_list:
+                            for tmp in new_exp_list:
+                                if x.table_name == tmp.table_name and x.column_name == tmp.column_name:
+                                    tmp_bool = True
+                                    break
+    
+                            if tmp_bool is False:
+                                new_exp = copy.deepcopy(x)
+                                new_exp_list.append(new_exp)
+                                new_select_dict[new_exp] = None
 
                 elif isinstance(exp,YRawColExp):
                     tmp_bool = False
@@ -5454,6 +5632,7 @@ def ysmart_tree_gen(schema,xml_file):
     
     gen_table_name(node)
     
+    
     predicate_pushdown(node)
     
     column_filtering(node)
@@ -5461,6 +5640,7 @@ def ysmart_tree_gen(schema,xml_file):
     gen_table_name(node)
     
     gen_column_index(node)
+    
     
     node.debug(0)
 
