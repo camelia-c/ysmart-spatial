@@ -40,7 +40,7 @@ rel_func_dict = {"EQ":" == ","GTH":" > ", "LTH":" < ","NOT_EQ":" != ","GEQ":" >=
 packagepath = "edu/osu/cse/ysmart/"
 packagename = "edu.osu.cse.ysmart"
 
-
+calls_resque=0
 
 ### a function to generate non-spatialjoin but spatial operators code
 ####input: @exp: the sql expression than you want to translate. If the exp is an agg operation, it will return the jave exp of its argument based on JavaTopologySuite
@@ -80,6 +80,7 @@ def util_write_spatial_code(para1,buf_dict):
 def write_spatial_code(exp,buf_dict):
     
     res_str=''
+    global calls_resque
     
     if len(exp.parameter_list) == 1:
         
@@ -139,6 +140,17 @@ def write_spatial_code(exp,buf_dict):
             res_str+='.distance('
             res_str+='(new WKTReader('+util_wkt2+'))'
             res_str+=')'
+        else:
+            #it is a spatial relative predicate-->call for resque
+            print 'it is a spatial relative predicate-->call for resque'
+            calls_resque=1
+            if exp.func_name=='ST_INTERSECTS':
+                rr='new ReducerRESQUE().intersects('+util_wkt1+','+util_wkt2+')'
+                res_str=rr
+                print 'WILL CALL RESQUE......',res_str
+            else:
+                #needs extension of resque code for ST_OVERLAPS,ST_WITHIN, etc
+                return 'NOT YET IMPLEMENTED'
         
         
                
@@ -702,7 +714,7 @@ def __tablenode_gen_mr__(tree,fo):
 
 
     print >>fo,"\tpublic static class Map extends Mapper<Object, Text,"+map_key_type+","+map_value_type+">{\n"
-
+    
     print >>fo,"\t\tpublic void map(Object key, Text value, Context context) throws IOException,InterruptedException{\n"
     
     print >>fo,"\t\t\tString line = value.toString();"
@@ -1578,6 +1590,9 @@ def __self_join__(tree):
 
 def __join_gen_mr__(tree,left_name,fo):
 
+    global calls_resque
+    calls_resque=0
+    
 ### join map part
 
     line_buffer = "line_buf"
@@ -1843,6 +1858,7 @@ def __join_gen_mr__(tree,left_name,fo):
     reduce_value_type = "Text"
 
     print >>fo,"\tpublic static class Reduce extends  Reducer<"+ map_key_type+","+map_value_type+","+reduce_key_type+","+reduce_value_type+">{\n"
+  
     print >>fo, "\t\tpublic void reduce("+map_key_type+" key, Iterable<"+map_value_type+"> v, Context context) throws IOException,InterruptedException{\n"
 
     print >>fo, "\t\t\tIterator values = v.iterator();"
@@ -2207,6 +2223,17 @@ def __join_gen_mr__(tree,left_name,fo):
 
     print >>fo,"\t\t}\n" #### end of  reduce func
 
+
+    #ADDED FOR RESQUE
+    print 'calls_resque=',calls_resque
+    if calls_resque==1:
+        print >>fo,"\t\tprivate native int intersects(String geom1,String geom2);\n"
+        print >>fo,"\t\t\n"
+        print >>fo,"\t\tstatic{\n"
+        print >>fo,"\t\tSystem.loadLibrary(\"ReducerRESQUE\");\n"
+        print >>fo,"\t\t}\n"
+        print >>fo,"\t\t\n"    
+    #continue
     print >>fo,"\t}\n" ##### end of reduce class
 
     __gen_main__(tree,fo,map_key_type,map_value_type,reduce_key_type,reduce_value_type,True)
@@ -3383,6 +3410,27 @@ def generate_code(tree,filename):
 
     elif isinstance(tree,ystreespatial.TwoJoinNode) is True and isinstance(tree,ystreespatial.TwoJoinSpatialNode) is True:
         print 'generate code for a SpatialJoinNode....to be done in version 2, using RESQUE'
+        tree.output = filename
+        fo = open(op_name,"w")
+        print 'generated code for TwoJoinSpatialNode in file:'+op_name
+        
+        if not isinstance(tree.left_child,ystreespatial.TableNode):
+                new_name = filename[:-1]  +str(int(filename[-1])+1)
+                __join_code_gen__(tree,new_name,fo)
+                ret_name = generate_code(tree.left_child,new_name)
+
+        else:
+            ret_name = filename
+            __join_code_gen__(tree,tree.left_child.table_name,fo)
+
+        if not isinstance(tree.right_child,ystreespatial.TableNode):
+            new_name = ret_name[:-1] + str(int(ret_name[-1])+1)
+            ret_name = generate_code(tree.right_child,new_name)
+
+        return ret_name        
+        
+        
+        
     
     elif isinstance(tree,ystreespatial.CompositeNode):
 
@@ -3648,7 +3696,7 @@ if __name__ == '__main__':
     
     #spatial
     schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/21TEST.schema'
-    xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/CODETEST36.xml'
+    xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/SPCODETEST10.xml'
     
     print 'Query Plan For:',xml_file
     #non-spatial
