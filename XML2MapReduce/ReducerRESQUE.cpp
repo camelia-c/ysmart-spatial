@@ -33,6 +33,12 @@ typedef boost::geometry::model::box<point> box;
 JNIEXPORT jint JNICALL Java_ReducerRESQUE_intersects (JNIEnv *env, jobject obj, jstring s1, jstring s2)
 {
   //read and build mbr for the first geometry, read and build mbr for second geometry
+  jboolean blnIsCopy1;
+  jboolean blnIsCopy2;
+  const char* strCIn1 = (env)->GetStringUTFChars(s1 , &blnIsCopy1);
+  const char* strCIn2 = (env)->GetStringUTFChars(s2 , &blnIsCopy2);
+
+  
   polygon * shape1= NULL;
   box * mbb1 = NULL;
   shape1 = new polygon();
@@ -44,17 +50,17 @@ JNIEXPORT jint JNICALL Java_ReducerRESQUE_intersects (JNIEnv *env, jobject obj, 
   mbb2   = new box();
   
   
-  boost::geometry::read_wkt(s1,*shape1);
+  boost::geometry::read_wkt(strCIn1,*shape1);
   boost::geometry::correct(*shape1);
   boost::geometry::envelope(*shape1, *mbb1);
 
-  boost::geometry::read_wkt(s2,*shape2);
+  boost::geometry::read_wkt(strCIn2,*shape2);
   boost::geometry::correct(*shape2);
   boost::geometry::envelope(*shape2, *mbb2);
   
   if (boost::geometry::intersects( *mbb1, *mbb2) )
   {
-    cout << "they intersect s1= "<<s1<<" and s2= "<<s2;
+    cout << "they intersect s1= "<<strCIn1<<" and s2= "<<strCIn2;
     return 1;
   }
   
