@@ -24,6 +24,7 @@ import ystreespatial
 import correlationspatial
 import config
 import pycallgraph
+import string
 
 ##input exp should be YFuncExp
 
@@ -144,15 +145,31 @@ def write_spatial_code(exp,buf_dict):
             res_str+=')'
         else:
             #it is a spatial relative predicate-->call for resque
-            print 'it is a spatial relative predicate-->call for resque'
-            calls_resque=1
+            #print 'it is a spatial relative predicate-->call for resque'
+                       
+            
             if exp.func_name=='ST_INTERSECTS':
-                rr='new '+name_generated_file[:-5]+'.Reduce().intersects('+util_wkt1+','+util_wkt2+')'
+                rr='INTER@'+util_wkt1+'@'+util_wkt2                
                 res_str=rr
-                print 'WILL CALL RESQUE......',res_str
+                #print 'WILL CALL RESQUE......',res_str
+            elif exp.func_name=='ST_DISJOINT':
+                rr='DISJO@'+util_wkt1+'@'+util_wkt2                
+                res_str=rr
+                #print 'WILL CALL RESQUE......',res_str
+            elif exp.func_name=='ST_EQUALS':
+                rr='EQUAL@'+util_wkt1+'@'+util_wkt2                
+                res_str=rr
+                #print 'WILL CALL RESQUE......',res_str 
+            elif exp.func_name=='ST_OVERLAPS':
+                rr='OVERL@'+util_wkt1+'@'+util_wkt2                
+                res_str=rr
+                #print 'WILL CALL RESQUE......',res_str    
+            elif exp.func_name=='ST_WITHIN':
+                rr='WITHI@'+util_wkt1+'@'+util_wkt2                
+                res_str=rr
+                #print 'WILL CALL RESQUE......',res_str             
             else:
-                #needs extension of resque code for ST_OVERLAPS,ST_WITHIN, etc
-                return 'NOT YET IMPLEMENTED'
+                return 'NOT YET IMPLEMENTED in boost'
         
         
                
@@ -552,6 +569,7 @@ def __gen_header__(fo):
     print >>fo,"import java.io.IOException;"
     print >>fo,"import java.util.*;"
     print >>fo,"import java.text.*;"
+    print >>fo,"import java.io.*;"
     print >>fo,"import org.apache.hadoop.fs.Path;"
     print >>fo,"import org.apache.hadoop.conf.*;"
     print >>fo,"import org.apache.hadoop.io.*;"
@@ -1418,7 +1436,7 @@ def __get_join_key__(exp,col_list,table):
     
     
     if isinstance(exp,ystreespatial.YFuncExp) and exp.func_name in spatial_func_list:
-        
+        #MODIFY TO HAVE THE TILE AS KEY
         return
         
     
@@ -1594,7 +1612,7 @@ def __join_gen_mr__(tree,left_name,fo):
 
     global calls_resque
     global name_generated_file
-    calls_resque=0
+    
     
 ### join map part
 
@@ -1884,8 +1902,8 @@ def __join_gen_mr__(tree,left_name,fo):
 
     print >>fo,"\t\t\t\t}\n"
     print >>fo,"\t\t\t}\n" ### end of while
-
-
+    
+    
     print >>fo,"\t\t\tNullWritable key_op = NullWritable.get();"
 
     buf_dict = {}
@@ -2185,31 +2203,142 @@ def __join_gen_mr__(tree,left_name,fo):
             print >>fo, "\t\t\t}"
 
     else:
-        print >>fo,"\t\t\tfor(int i=0;i<" + left_array + ".size();i++){\n"
-        print >>fo,"\t\t\t\tString[] " + left_line_buffer + " = ((String)" + left_array + ".get(i)).split(\"\\\|\");"
         
-        print >>fo,"\t\t\t\tfor(int j=0;j<" +right_array + ".size();j++){\n"
-
-        print >>fo,"\t\t\t\t\tString[] " + right_line_buffer + " = ((String)" + right_array + ".get(j)).split(\"\\\|\");"
-
-        reduce_key = __gen_mr_value__(tree.select_list.tmp_exp_list[:1],reduce_key_type,buf_dict)
-        reduce_value = __gen_mr_value__(tree.select_list.tmp_exp_list,reduce_value_type,buf_dict)
-
+        #print 'this is not an explicit join'
+        
+        
         if tree.where_condition is not None:
             exp = tree.where_condition.where_condition_exp
             
-            print >>fo,"\t\t\t\t\tif(" + __where_convert_to_java__(exp,buf_dict) + "){\n" 
-            tmp_output = "context.write("
-            tmp_output += "key_op"
-            tmp_output += ", "
-            tmp_output += "new " + reduce_value_type + "(" + reduce_value + ")"
-            tmp_output += ");"
-
-            print >>fo, "\t\t\t\t\t\t",tmp_output
-
-            print >>fo,"\t\t\t\t\t}"
+            #ADD CODE FOR SPATIAL JOIN PROCESSING 
+            if calls_resque==1:
+                #print 'one, CALL_RESQUE=',calls_resque
+                
+                #print 'adding code for resque integration===============>>>>>>'
+                sstr1=__where_convert_to_java__(exp,buf_dict)
+                #print '(code@util_wkt1@util_wkt2)',sstr1
+                
+                pp11=sstr1.find('==')
+                pp12=sstr1.find('!=')
+                pp13=sstr1.find('>=')
+                pp14=sstr1.find('>')
+                pp15=sstr1.find('<=')
+                pp16=sstr1.find('<')
+                
+                if pp11!=-1:
+                    sstr1=sstr1[:pp11]
+                elif pp12!=-1:
+                    sstr1=sstr1[:pp12]
+                elif pp13!=-1:
+                    sstr1=sstr1[:pp13] 
+                elif pp14!=-1:
+                    sstr1=sstr1[:pp14]
+                elif pp15!=-1:
+                    sstr1=sstr1[:pp15] 
+                elif pp16!=-1:
+                    sstr1=sstr1[:pp16]
+                
+                sstr1=sstr1[:-2] 
+                
+                partssstr1=sstr1.split('@')
+                
+                #HERE, LET us build a file to pass to the RESQUE as input
+                
+                print >>fo,"\t\t\ttry{\n"
+                print >>fo,"\t\t\t\tFileWriter fstream = new FileWriter(\"resque_text.txt\");\n"
+                print >>fo,"\t\t\t\tBufferedWriter out = new BufferedWriter(fstream);\n"
+                
+                #writing the part for the RIGHT source of the spatial join, we have that Oracle-alike optimization  
+                print >>fo,"\t\t\t\tfor(int i=0;i<" + right_array + ".size();i++){\n"
+                print >>fo,"\t\t\t\t\tString[] " + right_line_buffer + " = ((String)" + right_array + ".get(i)).split(\"\\\|\");"            
+                print >>fo,"\t\t\t\t\tout.write(\"TILENAME\tR\t\"+i+\"\t\"+"+partssstr1[1]+"\t);\n"
+                print >>fo, "\t\t\t\t}\n"
+                
+                #writing the part for the LEFT source of the spatial join
+                print >>fo,"\t\t\t\tfor(int i=0;i<" + left_array + ".size();i++){\n"
+                print >>fo,"\t\t\t\t\tString[] " + left_line_buffer + " = ((String)" + left_array + ".get(i)).split(\"\\\|\");"            
+                print >>fo,"\t\t\t\t\tout.write(\"TILENAME\tL\t\"+i+\"\t\"+"+partssstr1[2]+"\t);\n"
+                print >>fo, "\t\t\t\t}\n"                
+                
+                print >>fo,"\t\t\t\tout.close();\n"
+                print >>fo,"\t\t\t}catch (Exception e){\n"
+                print >>fo,"\t\t\t\tSystem.err.println(\"Error: \" + e.getMessage());\n"
+                print >>fo,"\t\t\t\tout.close();\n"
+                print >>fo,"\t\t\t}\n"
+                
+                #now that the file is ready to be processed in RESQUE, call function via JNI
+                print >>fo,"\t\t\t String[] result_resque=new "+name_generated_file[:-5]+"().intersects(\""+partssstr1[0][1:]+"\",\"resque_text.txt\");\n"
+                
+                #now we can retrieve the pairs of indices from left-right that matched in RESQUE
+                print >>fo,"\t\t\t for(int j=0;j<result_resque.length;j++){\n"
+                print >>fo,"\t\t\t\t int position=result_resque[j].indexOf(\"@\");\n"
+                print >>fo,"\t\t\t\t int leftindex=Integer.parseInt(result_resque[j].substring(0,position));\n"
+                print >>fo,"\t\t\t\t int rightindex=Integer.parseInt(result_resque[j].substring(position+1));\n"
+                
+                print >>fo,"\t\t\t\tString[] " + left_line_buffer + " = ((String)" + left_array + ".get(leftindex)).split(\"\\\|\");"
+                print >>fo,"\t\t\t\tString[] " + right_line_buffer + " = ((String)" + right_array + ".get(rightindex)).split(\"\\\|\");"
+                
+                
+                
+                
+                
+        
+                reduce_key = __gen_mr_value__(tree.select_list.tmp_exp_list[:1],reduce_key_type,buf_dict)
+                reduce_value = __gen_mr_value__(tree.select_list.tmp_exp_list,reduce_value_type,buf_dict)
+                
+                
+                
+                tmp_output = "context.write("
+                tmp_output += "key_op"
+                tmp_output += ", "
+                tmp_output += "new " + reduce_value_type + "(" + reduce_value + ")"
+                tmp_output += ");"
+    
+                print >>fo, "\t\t\t\t",tmp_output
+    
+                
+                
+                
+                
+            elif calls_resque==0:
+                #print ' zero, CALL_RESQUE=',calls_resque
+                
+                
+                print >>fo,"\t\t\tfor(int i=0;i<" + left_array + ".size();i++){\n"
+                print >>fo,"\t\t\t\tString[] " + left_line_buffer + " = ((String)" + left_array + ".get(i)).split(\"\\\|\");"
+                
+                print >>fo,"\t\t\t\tfor(int j=0;j<" +right_array + ".size();j++){\n"
+        
+                print >>fo,"\t\t\t\t\tString[] " + right_line_buffer + " = ((String)" + right_array + ".get(j)).split(\"\\\|\");"
+        
+                reduce_key = __gen_mr_value__(tree.select_list.tmp_exp_list[:1],reduce_key_type,buf_dict)
+                reduce_value = __gen_mr_value__(tree.select_list.tmp_exp_list,reduce_value_type,buf_dict)
+                
+                print >>fo,"\t\t\t\t\tif(" + __where_convert_to_java__(exp,buf_dict) + "){\n" 
+                tmp_output = "context.write("
+                tmp_output += "key_op"
+                tmp_output += ", "
+                tmp_output += "new " + reduce_value_type + "(" + reduce_value + ")"
+                tmp_output += ");"
+    
+                print >>fo, "\t\t\t\t\t\t",tmp_output
+    
+                print >>fo,"\t\t\t\t\t}"          
+            
+            
 
         else:
+            
+            print >>fo,"\t\t\tfor(int i=0;i<" + left_array + ".size();i++){\n"
+            print >>fo,"\t\t\t\tString[] " + left_line_buffer + " = ((String)" + left_array + ".get(i)).split(\"\\\|\");"
+            
+            print >>fo,"\t\t\t\tfor(int j=0;j<" +right_array + ".size();j++){\n"
+    
+            print >>fo,"\t\t\t\t\tString[] " + right_line_buffer + " = ((String)" + right_array + ".get(j)).split(\"\\\|\");"
+    
+            reduce_key = __gen_mr_value__(tree.select_list.tmp_exp_list[:1],reduce_key_type,buf_dict)
+            reduce_value = __gen_mr_value__(tree.select_list.tmp_exp_list,reduce_value_type,buf_dict)
+            
             if tree.select_list is None:
                 print >>sys.stderr,"Internal Error:__join_gen_mr__"
                 exit(29)
@@ -2222,8 +2351,8 @@ def __join_gen_mr__(tree,left_name,fo):
 
             print >>fo, "\t\t\t\t\t",tmp_output
             
-
-        print >>fo,"\t\t\t\t}\n"
+        if calls_resque==0:
+            print >>fo,"\t\t\t\t}\n"
 
         print >>fo,"\t\t\t}\n"
 
@@ -2231,16 +2360,6 @@ def __join_gen_mr__(tree,left_name,fo):
     print >>fo,"\t\t}\n" #### end of  reduce func
 
 
-    #ADDED FOR RESQUE
-    print 'calls_resque=',calls_resque
-    if calls_resque==1:
-        print >>fo,"\t\tprivate native int intersects(String geom1,String geom2);\n"
-        print >>fo,"\t\t\n"
-        print >>fo,"\t\tstatic{\n"
-        print >>fo,"\t\tSystem.loadLibrary(\"ReducerRESQUE\");\n"
-        print >>fo,"\t\t}\n"
-        print >>fo,"\t\t\n"    
-    #continue
     print >>fo,"\t}\n" ##### end of reduce class
 
     __gen_main__(tree,fo,map_key_type,map_value_type,reduce_key_type,reduce_value_type,True)
@@ -3266,9 +3385,15 @@ def __groupby_code_gen__(tree,fo):
 
 
 def __join_code_gen__(tree,left_name,fo):
+    
+    global calls_resque 
+    
     __gen_des__(fo)
     __gen_header__(fo)
-    print >>fo,"public class "+fo.name.split(".java")[0]+" extends Configured implements Tool{\n"
+    if calls_resque==0:
+        print >>fo,"public class "+fo.name.split(".java")[0]+" extends Configured implements Tool{\n"
+    elif calls_resque==1:
+        print >>fo,"public class "+fo.name.split(".java")[0]+" extends ReducerRESQUE implements Tool{\n"
 
     __join_gen_mr__(tree,left_name,fo)
     print >>fo, "}\n"
@@ -3286,6 +3411,7 @@ def generate_code(tree,filename):
 
     op_name = filename + ".java"
     global name_generated_file
+    global calls_resque
 
     ret_name = filename
 
@@ -3349,6 +3475,7 @@ def generate_code(tree,filename):
     elif isinstance(tree,ystreespatial.TwoJoinNode) is True and isinstance(tree,ystreespatial.TwoJoinSpatialNode) is False:
         tree.output = filename
         fo = open(op_name,"w")
+        calls_resque=0
         print 'generated code for TwoJoinNode in file:'+op_name
         
         if tree.left_composite is not None and tree.right_composite is not None:
@@ -3416,11 +3543,12 @@ def generate_code(tree,filename):
         return ret_name
 
     elif isinstance(tree,ystreespatial.TwoJoinNode) is True and isinstance(tree,ystreespatial.TwoJoinSpatialNode) is True:
-        print 'generate code for a SpatialJoinNode....to be done in version 2, using RESQUE'
+        #print 'generate code for a SpatialJoinNode....to be done in version 2, using RESQUE'
         tree.output = filename
         fo = open(op_name,"w")
         name_generated_file=op_name
-        print 'generated code for TwoJoinSpatialNode in file:'+op_name
+        calls_resque=1
+        #print 'generated code for TwoJoinSpatialNode in file:'+op_name
         
         if not isinstance(tree.left_child,ystreespatial.TableNode):
                 new_name = filename[:-1]  +str(int(filename[-1])+1)
@@ -3704,7 +3832,7 @@ if __name__ == '__main__':
     
     #spatial
     schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/21TEST.schema'
-    xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/SPCODETEST1.xml'
+    xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/SPCODETEST3.xml'
     
     print 'Query Plan For:',xml_file
     #non-spatial
@@ -3715,3 +3843,4 @@ if __name__ == '__main__':
     ysmart_code_gen(params,'','')
     
     
+
