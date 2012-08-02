@@ -1,12 +1,21 @@
-public class ReducerRESQUE{
+package edu.osu.cse.ysmart.testquery;
+
+import org.apache.hadoop.conf.*;
+
+public class ReducerRESQUE extends Configured{
 
   public static void main(String[] args) {
 
-  System.out.println("rez="+(new ReducerRESQUE().intersects("POLYGON((10 20, 20 30, 40 50, 10,20))","POLYGON((10 20, 20 30, 30 40, 10 20))")));
+  String[] res=new ReducerRESQUE().intersects("INTER","resque_text.txt");
+  System.out.println("");
+  System.out.println("nrelem="+res.length);
+  for(int j=0;j<res.length;j++)
+    System.out.println("******** "+res[j]+" **********");
+
   }
 
-  private native int intersects(String a,String b);
-  //here to be added declarations for other native methods like overlaps,etc
+  public native String[] intersects(String codeop,String filename);
+  
 
   static 
   {
