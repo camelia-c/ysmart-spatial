@@ -151,26 +151,125 @@ JNIEXPORT jobjectArray JNICALL Java_edu_osu_cse_ysmart_testquery_ReducerRESQUE_i
 		    for (int k=0; k< innerloop_size; k++)
 		    {
 		        //check opcode --> boost::overlaps,etc
-			if (boost::geometry::intersects( *(mbbs[0][j]), *(mbbs[i][k])) )
-			    //&& boost::geometry::intersects(*((*shapes)[0][j]), *((*shapes)[i][k]))) // if the mbb && shapes intersects 
+			if (string("INTER").compare(strCIn1)==0)
 			{
-			  
-			  //put in list rez_partial
-			  cerr<< "they do intersect";
-			  string ss2="";
-			  stringstream ss,sss;
-			  ss << j;
-			  
-			  ss2+=ss.str();
-			  ss2+=string("@");
-			  
-			  sss << k;
-			  ss2+=sss.str();
-			  
-			  cerr << "ss2="<<ss2<<endl;
-			  rez_partial.push_back(ss2);
-			  
-			  
+			  if (boost::geometry::intersects( *(mbbs[0][j]), *(mbbs[i][k])) )
+			      //&& boost::geometry::intersects(*((*shapes)[0][j]), *((*shapes)[i][k]))) // if the mbb && shapes intersects 
+			  {
+			    
+			    //put in list rez_partial
+			    cerr<< "they do intersect";
+			    string ss2="";
+			    stringstream ss,sss;
+			    ss << j;
+			    
+			    ss2+=ss.str();
+			    ss2+=string("@");
+			    
+			    sss << k;
+			    ss2+=sss.str();
+			    
+			    cerr << "ss2="<<ss2<<endl;
+			    rez_partial.push_back(ss2);
+			    
+			    
+			  }
+			}
+			else if (string("DISJO").compare(strCIn1)==0)
+			{
+			  if (boost::geometry::disjoint( *(mbbs[0][j]), *(mbbs[i][k])) )
+			      //&& boost::geometry::intersects(*((*shapes)[0][j]), *((*shapes)[i][k]))) // if the mbb && shapes intersects 
+			  {
+			    
+			    //put in list rez_partial
+			    cerr<< "they are disjoint";
+			    string ss2="";
+			    stringstream ss,sss;
+			    ss << j;
+			    
+			    ss2+=ss.str();
+			    ss2+=string("@");
+			    
+			    sss << k;
+			    ss2+=sss.str();
+			    
+			    cerr << "ss2="<<ss2<<endl;
+			    rez_partial.push_back(ss2);
+			    
+			    
+			  }
+			}
+			else if (string("EQUAL").compare(strCIn1)==0)
+			{
+			  if (boost::geometry::equals( *(mbbs[0][j]), *(mbbs[i][k])) )
+			      //&& boost::geometry::intersects(*((*shapes)[0][j]), *((*shapes)[i][k]))) // if the mbb && shapes intersects 
+			  {
+			    
+			    //put in list rez_partial
+			    cerr<< "they are equal";
+			    string ss2="";
+			    stringstream ss,sss;
+			    ss << j;
+			    
+			    ss2+=ss.str();
+			    ss2+=string("@");
+			    
+			    sss << k;
+			    ss2+=sss.str();
+			    
+			    cerr << "ss2="<<ss2<<endl;
+			    rez_partial.push_back(ss2);
+			    
+			    
+			  }
+			}
+			else if (string("OVERL").compare(strCIn1)==0)
+			{
+			  if (boost::geometry::overlaps( *(mbbs[0][j]), *(mbbs[i][k])) )
+			      //&& boost::geometry::intersects(*((*shapes)[0][j]), *((*shapes)[i][k]))) // if the mbb && shapes intersects 
+			  {
+			    
+			    //put in list rez_partial
+			    cerr<< "they do overlap";
+			    string ss2="";
+			    stringstream ss,sss;
+			    ss << j;
+			    
+			    ss2+=ss.str();
+			    ss2+=string("@");
+			    
+			    sss << k;
+			    ss2+=sss.str();
+			    
+			    cerr << "ss2="<<ss2<<endl;
+			    rez_partial.push_back(ss2);
+			    
+			    
+			  }
+			}
+			else if (string("WITHI").compare(strCIn1)==0)
+			{
+			  if (boost::geometry::within( *(mbbs[0][j]), *(mbbs[i][k])) )
+			      //&& boost::geometry::intersects(*((*shapes)[0][j]), *((*shapes)[i][k]))) // if the mbb && shapes intersects 
+			  {
+			    
+			    //put in list rez_partial
+			    cerr<< "they are within";
+			    string ss2="";
+			    stringstream ss,sss;
+			    ss << j;
+			    
+			    ss2+=ss.str();
+			    ss2+=string("@");
+			    
+			    sss << k;
+			    ss2+=sss.str();
+			    
+			    cerr << "ss2="<<ss2<<endl;
+			    rez_partial.push_back(ss2);
+			    
+			    
+			  }
 			}
 		    }
 		}
@@ -199,5 +298,6 @@ JNIEXPORT jobjectArray JNICALL Java_edu_osu_cse_ysmart_testquery_ReducerRESQUE_i
   
   
 }
+
 
 
