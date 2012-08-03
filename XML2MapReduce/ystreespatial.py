@@ -1492,7 +1492,8 @@ class MultipleJoinNode(QueryPlanTreeBase):
             
             current_node = None
 
-            tmp_index = -1          
+            tmp_index = -1   
+            contor_spatial=0
             
             for nsf in nonspatial_first:
                 
@@ -1555,7 +1556,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
                         
             for sf in spatial_last:
                                 
-                
+                contor_spatial=contor_spatial+1
                 for a_child in tmp_children_list:
                     
                     
@@ -1566,6 +1567,89 @@ class MultipleJoinNode(QueryPlanTreeBase):
                         if current_node is None:
         
                             current_node = a_child
+                        
+                        elif isinstance(current_node,TwoJoinNode) and (contor_spatial==1):
+                            #if previous node is 2jn, then this surely is a 2jn between a non-spatial and a spatial table
+                            a_join_node = TwoJoinNode()
+                                                        
+                                                       
+                            a_join_node.source = self
+                            a_join_node.join_explicit = self.join_explicit
+                            
+                            a_join_node.left_child = copy.deepcopy(current_node)
+                            a_join_node.left_child.parent = a_join_node
+                            a_join_node.right_child = copy.deepcopy(a_child)
+                            a_join_node.right_child.parent = a_join_node
+        
+                            for x in current_node.table_list:
+                                if x not in a_join_node.table_list:
+                                    a_join_node.table_list.append(x)
+                            a_join_node.table_alias_dict = current_node.table_alias_dict
+        
+        
+                            for x in a_child.table_alias_dict.keys():
+                                if x not in a_join_node.table_alias_dict.keys():
+                                    a_join_node.table_alias_dict[x] = a_child.table_alias_dict[x]
+                                else:
+                                    exit(29)
+        
+        
+                            for x in a_child.table_list:
+                                if x not in a_join_node.table_list:
+                                    a_join_node.table_list.append(x)
+                            
+                            if self.join_explicit == True:
+        
+                                tmp_list_join_condition = self.join_info[0]
+                                tmp_list_join_type = self.join_info[1]
+        
+        
+                                a_join_node.join_condition = tmp_list_join_condition[tmp_index]
+                                a_join_node.join_type = tmp_list_join_type[tmp_index]
+        
+                            current_node = a_join_node 
+                        
+                        elif (current_node is not None) and (contor_spatial==1):
+                            #if previous node is in nonspatial_first, then this surely is a 2jn between a non-spatial and a spatial table  
+                            a_join_node = TwoJoinNode()
+                                                                                    
+                            
+                            a_join_node.source = self
+                            a_join_node.join_explicit = self.join_explicit
+                            
+                            a_join_node.left_child = copy.deepcopy(current_node)
+                            a_join_node.left_child.parent = a_join_node
+                            a_join_node.right_child = copy.deepcopy(a_child)
+                            a_join_node.right_child.parent = a_join_node
+                           
+                            for x in current_node.table_list:
+                                if x not in a_join_node.table_list:
+                                    a_join_node.table_list.append(x)
+                            a_join_node.table_alias_dict = current_node.table_alias_dict
+                           
+                           
+                            for x in a_child.table_alias_dict.keys():
+                                if x not in a_join_node.table_alias_dict.keys():
+                                    a_join_node.table_alias_dict[x] = a_child.table_alias_dict[x]
+                                else:
+                                    exit(29)
+                           
+                           
+                            for x in a_child.table_list:
+                                if x not in a_join_node.table_list:
+                                    a_join_node.table_list.append(x)
+                            
+                            if self.join_explicit == True:
+                           
+                                tmp_list_join_condition = self.join_info[0]
+                                tmp_list_join_type = self.join_info[1]
+                           
+                           
+                                a_join_node.join_condition = tmp_list_join_condition[tmp_index]
+                                a_join_node.join_type = tmp_list_join_type[tmp_index]
+                           
+                            current_node = a_join_node                             
+                            
                             
         
                         else:
