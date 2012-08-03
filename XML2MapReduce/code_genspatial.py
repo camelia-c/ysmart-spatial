@@ -152,22 +152,53 @@ def write_spatial_code(exp,buf_dict):
                 rr='INTER@'+util_wkt1+'@'+util_wkt2                
                 res_str=rr
                 #print 'WILL CALL RESQUE......',res_str
+                if isinstance(para2,ystreespatial.YSpatialConsExp):
+                    #print 'with constant'
+                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str+='.intersects('
+                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+=')?1:0'         #because the result in JTS is boolean
+                            
             elif exp.func_name=='ST_DISJOINT':
                 rr='DISJO@'+util_wkt1+'@'+util_wkt2                
                 res_str=rr
                 #print 'WILL CALL RESQUE......',res_str
+                if isinstance(para2,ystreespatial.YSpatialConsExp):
+                    #print 'with constant'
+                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str+='.disjoint('
+                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+=')?1:0'         #because the result in JTS is boolean                
             elif exp.func_name=='ST_EQUALS':
                 rr='EQUAL@'+util_wkt1+'@'+util_wkt2                
                 res_str=rr
                 #print 'WILL CALL RESQUE......',res_str 
+                if isinstance(para2,ystreespatial.YSpatialConsExp):
+                    #print 'with constant'
+                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str+='.equals('
+                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+=')?1:0'         #because the result in JTS is boolean'                   
             elif exp.func_name=='ST_OVERLAPS':
                 rr='OVERL@'+util_wkt1+'@'+util_wkt2                
                 res_str=rr
-                #print 'WILL CALL RESQUE......',res_str    
+                #print 'WILL CALL RESQUE......',res_str 
+                if isinstance(para2,ystreespatial.YSpatialConsExp):
+                    #print 'with constant'
+                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str+='.overlaps('
+                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+=')?1:0'         #because the result in JTS is boolean'                   
             elif exp.func_name=='ST_WITHIN':
                 rr='WITHI@'+util_wkt1+'@'+util_wkt2                
                 res_str=rr
-                #print 'WILL CALL RESQUE......',res_str             
+                #print 'WILL CALL RESQUE......',res_str   
+                if isinstance(para2,ystreespatial.YSpatialConsExp):
+                    #print 'with constant'
+                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str+='.within('
+                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+=')?1:0'         #because the result in JTS is boolean'                   
             else:
                 return 'NOT YET IMPLEMENTED in boost'
         
@@ -3832,7 +3863,7 @@ if __name__ == '__main__':
     
     #spatial
     schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/21TEST.schema'
-    xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/SPCODETEST3.xml'
+    xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/SPCODETEST5.xml'
     
     print 'Query Plan For:',xml_file
     #non-spatial
@@ -3843,4 +3874,3 @@ if __name__ == '__main__':
     ysmart_code_gen(params,'','')
     
     
-
