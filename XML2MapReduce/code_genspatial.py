@@ -92,7 +92,7 @@ def write_spatial_code(exp,buf_dict):
         util_wkt=util_write_spatial_code(para1,buf_dict)
         
         if exp.func_name!='ST_ASTEXT':
-            res_str='(new WKTReader('+util_wkt+'))'
+            res_str='(red.read('+util_wkt+'))'
         else:
             res_str=util_wkt
         
@@ -104,11 +104,11 @@ def write_spatial_code(exp,buf_dict):
             res_str+='.getLength()'
         elif exp.func_name=='ST_BOUNDARY':
             res_str+='.getBoundary()'
-            res_str2='"ST_GEOMETRY(\'"+(new WKTWriter('+res_str+'))+"\')"'
+            res_str2='"ST_GEOMETRY(\'"+(wr.write('+res_str+'))+"\')"'
             res_str=res_str2
         elif exp.func_name=='ST_CENTROID':
             res_str+='.getCentroid()'
-            res_str2='"ST_GEOMETRY(\'"+(new WKTWriter('+res_str+'))+"\')"'
+            res_str2='"ST_GEOMETRY(\'"+(wr.write('+res_str+'))+"\')"'
             res_str=res_str2
         elif exp.func_name=='ST_ASTEXT':
             res_str+=''
@@ -120,28 +120,28 @@ def write_spatial_code(exp,buf_dict):
         util_wkt1=util_write_spatial_code(para1,buf_dict)
         util_wkt2=util_write_spatial_code(para2,buf_dict)
         
-        res_str='(new WKTReader('+util_wkt1+'))'
+        res_str='(red.read('+util_wkt1+'))'
         if exp.func_name=='ST_UNION':
             res_str+='.union('
-            res_str+='(new WKTReader('+util_wkt2+'))'
+            res_str+='(red.read('+util_wkt2+'))'
             res_str+=')'
-            res_str2='"ST_GEOMETRY(\'"+(new WKTWriter('+res_str+'))+"\')"'
+            res_str2='"ST_GEOMETRY(\'"+(wr.write('+res_str+'))+"\')"'
             res_str=res_str2
         elif exp.func_name=='ST_INTERSECTION':
             res_str+='.intersection('
-            res_str+='(new WKTReader('+util_wkt2+'))'
+            res_str+='(red.read('+util_wkt2+'))'
             res_str+=')'
-            res_str2='"ST_GEOMETRY(\'"+(new WKTWriter('+res_str+'))+"\')"'
+            res_str2='"ST_GEOMETRY(\'"+(wr.write('+res_str+'))+"\')"'
             res_str=res_str2            
         elif exp.func_name=='ST_DIFFERENCE':
             res_str+='.difference('
-            res_str+='(new WKTReader('+util_wkt2+'))'
+            res_str+='(red.read('+util_wkt2+'))'
             res_str+=')'
-            res_str2='"ST_GEOMETRY(\'"+(new WKTWriter('+res_str+'))+"\')"'
+            res_str2='"ST_GEOMETRY(\'"+(wr.write('+res_str+'))+"\')"'
             res_str=res_str2            
         elif exp.func_name=='ST_DISTANCE':
             res_str+='.distance('
-            res_str+='(new WKTReader('+util_wkt2+'))'
+            res_str+='(red.read('+util_wkt2+'))'
             res_str+=')'
         else:
             #it is a spatial relative predicate-->call for resque
@@ -154,15 +154,15 @@ def write_spatial_code(exp,buf_dict):
                 #print 'WILL CALL RESQUE......',res_str
                 if isinstance(para2,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str='(red.read('+util_wkt1+'))'
                     res_str+='.intersects('
-                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+='(red.read('+util_wkt2+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean
                 elif isinstance(para1,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt2+'))'
+                    res_str='(red.read('+util_wkt2+'))'
                     res_str+='.intersects('
-                    res_str+='(new WKTReader('+util_wkt1+'))'
+                    res_str+='(red.read('+util_wkt1+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean                    
                             
             elif exp.func_name=='ST_DISJOINT':
@@ -171,15 +171,15 @@ def write_spatial_code(exp,buf_dict):
                 #print 'WILL CALL RESQUE......',res_str
                 if isinstance(para2,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str='(red.read('+util_wkt1+'))'
                     res_str+='.disjoint('
-                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+='(red.read('+util_wkt2+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean                
                 elif isinstance(para1,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt2+'))'
+                    res_str='(red.read('+util_wkt2+'))'
                     res_str+='.disjoint('
-                    res_str+='(new WKTReader('+util_wkt1+'))'
+                    res_str+='(red.read('+util_wkt1+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean                                 
             elif exp.func_name=='ST_EQUALS':
                 rr='EQUAL@'+util_wkt1+'@'+util_wkt2                
@@ -187,15 +187,15 @@ def write_spatial_code(exp,buf_dict):
                 #print 'WILL CALL RESQUE......',res_str 
                 if isinstance(para2,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str='(red.read('+util_wkt1+'))'
                     res_str+='.equals('
-                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+='(red.read('+util_wkt2+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean'        
                 elif isinstance(para1,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt2+'))'
+                    res_str='(red.read('+util_wkt2+'))'
                     res_str+='.equals('
-                    res_str+='(new WKTReader('+util_wkt1+'))'
+                    res_str+='(red.read('+util_wkt1+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean                                 
             elif exp.func_name=='ST_OVERLAPS':
                 rr='OVERL@'+util_wkt1+'@'+util_wkt2                
@@ -203,15 +203,15 @@ def write_spatial_code(exp,buf_dict):
                 #print 'WILL CALL RESQUE......',res_str 
                 if isinstance(para2,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str='(red.read('+util_wkt1+'))'
                     res_str+='.overlaps('
-                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+='(red.read('+util_wkt2+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean'       
                 elif isinstance(para1,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt2+'))'
+                    res_str='(red.read('+util_wkt2+'))'
                     res_str+='.overlaps('
-                    res_str+='(new WKTReader('+util_wkt1+'))'
+                    res_str+='(red.read('+util_wkt1+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean                                 
             elif exp.func_name=='ST_WITHIN':
                 rr='WITHI@'+util_wkt1+'@'+util_wkt2                
@@ -219,15 +219,15 @@ def write_spatial_code(exp,buf_dict):
                 #print 'WILL CALL RESQUE......',res_str   
                 if isinstance(para2,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt1+'))'
+                    res_str='(red.read('+util_wkt1+'))'
                     res_str+='.within('
-                    res_str+='(new WKTReader('+util_wkt2+'))'
+                    res_str+='(red.read('+util_wkt2+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean'         
                 elif isinstance(para1,ystreespatial.YSpatialConsExp):
                     #print 'with constant'
-                    res_str='(new WKTReader('+util_wkt2+'))'
+                    res_str='(red.read('+util_wkt2+'))'
                     res_str+='.within('
-                    res_str+='(new WKTReader('+util_wkt1+'))'
+                    res_str+='(red.read('+util_wkt1+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean                                 
             else:
                 return 'NOT YET IMPLEMENTED in boost'
@@ -647,6 +647,11 @@ def __gen_header__(fo):
     
     print >>fo, "import com.vividsolutions.jts.*;";
     
+    print >>fo, "import com.vividsolutions.jts.geom.Geometry;";
+    print >>fo, "import com.vividsolutions.jts.io.WKTReader;";
+    print >>fo, "import com.vividsolutions.jts.io.WKTWriter;";
+    print >>fo, "import com.vividsolutions.jts.io.ParseException; ";   
+    
     print >>fo,"\n"
 
 def __gen_mr_key__(exp_list,type,buf_dict):
@@ -798,6 +803,11 @@ def __tablenode_gen_mr__(tree,fo):
     
     print >>fo,"\t\tpublic void map(Object key, Text value, Context context) throws IOException,InterruptedException{\n"
     
+    print >>fo,"\t\t\ttry {"
+    print >>fo,"\t\t\tWKTReader red=new WKTReader();"
+    print >>fo,"\t\t\tWKTWriter wr=new WKTWriter();"
+    print >>fo,"\t\t\tString unuseful=(red.read(new String(\"POINT(0 0)\"))).toText();"
+    
     print >>fo,"\t\t\tString line = value.toString();"
 
     print >>fo,"\t\t\tString[] "+ line_buffer +" = new String["+ str(max_index)+"];"
@@ -844,10 +854,12 @@ def __tablenode_gen_mr__(tree,fo):
         
         print >>fo,"\t\t\t}" # end of if
         
+    print >>fo,"\t\t\t} catch (ParseException e) {"
+    print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+    print >>fo,"\t\t\t} " #end of catch   
+    print >>fo,"\t\t}\n"#end of function
 
-    print >>fo,"\t\t}\n"
-
-    print >>fo,"\t}\n"
+    print >>fo,"\t}\n"#end of inner class
 
     __gen_main__(tree,fo,map_key_type,map_value_type,map_key_type,map_value_type,False)
 
@@ -898,6 +910,11 @@ def __orderby_gen_mr__(tree,fo):
 
     print >>fo,"\t\tpublic void map(Object key, Text value, Context context) throws IOException,InterruptedException{\n"
     
+    print >>fo,"\t\t\ttry {"
+    print >>fo,"\t\t\tWKTReader red=new WKTReader();"
+    print >>fo,"\t\t\tWKTWriter wr=new WKTWriter();" 
+    print >>fo,"\t\t\tString unuseful=(red.read(new String(\"POINT(0 0)\"))).toText();"
+    
     print >>fo,"\t\t\tString line = value.toString();"
 
     print >>fo,"\t\t\tString[] "+ line_buffer +" = new String["+ str(max_index)+"];"
@@ -938,7 +955,10 @@ def __orderby_gen_mr__(tree,fo):
             print >>fo, tmp_output
 
             print >>fo,"\t\t\t}" # end of if
-
+    
+    print >>fo,"\t\t\t} catch (ParseException e) {"
+    print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+    print >>fo,"\t\t\t} " #end of catch 
     print >>fo,"\t\t}\n"
     print >>fo,"\t}\n"
 
@@ -951,6 +971,11 @@ def __orderby_gen_mr__(tree,fo):
     print >>fo,"\tpublic static class Reduce extends  Reducer<"+ map_key_type+","+map_value_type+","+reduce_key_type+","+reduce_value_type+">{\n"
 
     print >>fo,"\t\tpublic void reduce("+map_key_type+" key, Iterable<"+map_value_type+"> v, Context context) throws IOException,InterruptedException{\n"
+    
+    print >>fo,"\t\t\ttry {"
+    print >>fo,"\t\t\tWKTReader red=new WKTReader();"
+    print >>fo,"\t\t\tWKTWriter wr=new WKTWriter();"
+    print >>fo,"\t\t\tString unuseful=(red.read(new String(\"POINT(0 0)\"))).toText();"    
 
     print >>fo, "\t\t\tIterator values = v.iterator();"
 
@@ -963,6 +988,10 @@ def __orderby_gen_mr__(tree,fo):
     print >>fo, "\t\t\t\tcontext.write(key_op,new Text(tmp));" 
 
     print >>fo, "\t\t\t}\n"
+    
+    print >>fo,"\t\t\t} catch (ParseException e) {"
+    print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+    print >>fo,"\t\t\t} " #end of catch       
 
     print >>fo,"\t\t}\n"
 
@@ -1130,6 +1159,12 @@ def __groupby_gen_mr__(tree,fo):
         print >>fo,"\t\t}"
 
     print >>fo,"\t\tpublic void map(Object key, Text value, Context context) throws IOException,InterruptedException{\n"
+    
+    print >>fo,"\t\t\ttry {"
+    print >>fo,"\t\t\tWKTReader red=new WKTReader();"
+    print >>fo,"\t\t\tWKTWriter wr=new WKTWriter();"
+    print >>fo,"\t\t\tString unuseful=(red.read(new String(\"POINT(0 0)\"))).toText();"
+
     print >>fo,"\t\t\tString line = value.toString();"
     print >>fo,"\t\t\tString[] "+ line_buffer +" = new String["+ str(max_index)+"];"
     print >>fo, "\t\t\tint prev=0,i=0,n=0;"
@@ -1249,6 +1284,9 @@ def __groupby_gen_mr__(tree,fo):
             
             print >>fo,"\t\t\t}" # end of if
 
+    print >>fo,"\t\t\t} catch (ParseException e) {"
+    print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+    print >>fo,"\t\t\t} " #end of catch         
     print >>fo,"\t\t}\n"    
 
     print >>fo,"\t}\n"
@@ -1269,6 +1307,12 @@ def __groupby_gen_mr__(tree,fo):
     print >>fo,"\tpublic static class Reduce extends Reducer<"+ map_key_type+","+map_value_type+","+reduce_key_type+","+reduce_value_type+">{\n"
     
     print >>fo,"\t\tpublic void reduce("+map_key_type+" key, Iterable<"+map_value_type+"> v, Context context) throws IOException,InterruptedException{\n"
+    
+    print >>fo,"\t\t\ttry {"
+    print >>fo,"\t\t\tWKTReader red=new WKTReader();"
+    print >>fo,"\t\t\tWKTWriter wr=new WKTWriter();"
+    print >>fo,"\t\t\tString unuseful=(red.read(new String(\"POINT(0 0)\"))).toText();"  
+    
     print >>fo, "\t\t\tIterator values = v.iterator();"
     print >>fo, "\t\t\tDouble[] "+agg_buffer+" = new Double[" + str(len(gb_exp_list)) + "];"  
 
@@ -1484,6 +1528,9 @@ def __groupby_gen_mr__(tree,fo):
 
     print >>fo, tmp_output
 
+    print >>fo,"\t\t\t} catch (ParseException e) {"
+    print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+    print >>fo,"\t\t\t} " #end of catch       
     
     print >>fo,"\t\t}\n"   ### end of reduce func
 
@@ -1738,6 +1785,11 @@ def __join_gen_mr__(tree,left_name,fo):
 
     print >>fo,"\t\tpublic void map(Object key, Text value,Context context) throws IOException,InterruptedException{\n"
     
+    print >>fo,"\t\t\ttry {"
+    print >>fo,"\t\t\tWKTReader red=new WKTReader();"
+    print >>fo,"\t\t\tWKTWriter wr=new WKTWriter();" 
+    print >>fo,"\t\t\tString unuseful=(red.read(new String(\"POINT(0 0)\"))).toText();"
+    
     print >>fo,"\t\t\tString line = value.toString();"
         
     print >>fo, "\t\t\tint prev=0,i=0,n=0;"
@@ -1926,6 +1978,10 @@ def __join_gen_mr__(tree,left_name,fo):
 
     if self_join_bool is False:
         print >>fo,"\t\t\t}\n"
+    
+    print >>fo,"\t\t\t} catch (ParseException e) {"
+    print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+    print >>fo,"\t\t\t} " #end of catch    
 
     print >>fo,"\t\t}\n" ### end of map func
 
@@ -1946,6 +2002,11 @@ def __join_gen_mr__(tree,left_name,fo):
         
     #continue
     print >>fo, "\t\tpublic void reduce("+map_key_type+" key, Iterable<"+map_value_type+"> v, Context context) throws IOException,InterruptedException{\n"
+    
+    print >>fo,"\t\t\ttry {"
+    print >>fo,"\t\t\tWKTReader red=new WKTReader();"
+    print >>fo,"\t\t\tWKTWriter wr=new WKTWriter();"
+    print >>fo,"\t\t\tString unuseful=(red.read(new String(\"POINT(0 0)\"))).toText();"    
 
     print >>fo, "\t\t\tIterator values = v.iterator();"
     print >>fo,"\t\t\tArrayList "+ left_array +" = new ArrayList();"
@@ -2324,7 +2385,7 @@ def __join_gen_mr__(tree,left_name,fo):
                 print >>fo,"\t\t\t\tout.close();\n"
                 print >>fo,"\t\t\t}catch (Exception e){\n"
                 print >>fo,"\t\t\t\tSystem.err.println(\"Error: \" + e.getMessage());\n"
-                print >>fo,"\t\t\t\tout.close();\n"
+                
                 print >>fo,"\t\t\t}\n"
                 
                 #now that the file is ready to be processed in RESQUE, call function via JNI
@@ -2418,6 +2479,10 @@ def __join_gen_mr__(tree,left_name,fo):
         print >>fo,"\t\t\t}\n"
 
 
+    print >>fo,"\t\t\t} catch (ParseException e) {"
+    print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+    print >>fo,"\t\t\t} " #end of catch     
+    
     print >>fo,"\t\t}\n" #### end of  reduce func
 
 
@@ -2487,6 +2552,12 @@ def __composite_gen_mr__(tree,fo):
     print >>fo,"\t\t}\n" 
 
     print >>fo,"\t\tpublic void map(Object key, Text value,Context context) throws IOException,InterruptedException{\n"
+    
+    print >>fo,"\t\t\ttry {"
+    print >>fo,"\t\t\tWKTReader red=new WKTReader();"
+    print >>fo,"\t\t\tWKTWriter wr=new WKTWriter();"  
+    print >>fo,"\t\t\tString unuseful=(red.read(new String(\"POINT(0 0)\"))).toText();"
+    
     print >>fo,"\t\t\tString line = value.toString();"
     print >>fo,"\t\t\tString[] " + line_buffer + "= line.split(\"\\\|\");"
     print >>fo,"\t\t\tBitSet dispatch = new BitSet(32);"
@@ -2570,6 +2641,10 @@ def __composite_gen_mr__(tree,fo):
             print >>fo,output
 
         print >>fo, "\t\t\t}\n"
+    
+    print >>fo,"\t\t\t} catch (ParseException e) {"
+    print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+    print >>fo,"\t\t\t} " #end of catch    
 
     print >>fo, "\t\t}\n"
     print >>fo,"\t}\n"
@@ -2585,6 +2660,11 @@ def __composite_gen_mr__(tree,fo):
         print >>fo, "\t\t}\n"
 
     print >>fo, "\t\tpublic void reduce("+map_key_type+" key, Iterable<"+map_value_type+"> v, Context context) throws IOException,InterruptedException{\n"
+    
+    print >>fo,"\t\t\ttry {"
+    print >>fo,"\t\t\tWKTReader red=new WKTReader();"
+    print >>fo,"\t\t\tWKTWriter wr=new WKTWriter();"
+    print >>fo,"\t\t\tString unuseful=(red.read(new String(\"POINT(0 0)\"))).toText();"    
 
 ##########reduce part variable declaration
 
@@ -2984,6 +3064,10 @@ def __composite_gen_mr__(tree,fo):
         print >>fo, "\t\t\t\t\tmos.write(key_op,new Text(it_output[i].get(j).toString()),Integer.toString(i)+\"/Mul\");"
         print >>fo, "\t\t\t\t}"
         print >>fo, "\t\t\t}\n"
+        
+        print >>fo,"\t\t\t} catch (ParseException e) {"
+        print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+        print >>fo,"\t\t\t} " #end of catch           
 
         print >>fo, "\t\t}"
         print >>fo, "\t}\n"
@@ -3370,6 +3454,10 @@ def __composite_gen_mr__(tree,fo):
             print >>fo,"\t\t\t\tString jfc_result = (String)jfc_output["+str(tree.jfc_node_list.index(x))+"].get(i);"
             print >>fo,"\t\t\t\tcontext.write(key_op, new Text(jfc_result));"
             print >>fo,"\t\t\t}"
+    
+    print >>fo,"\t\t\t} catch (ParseException e) {"
+    print >>fo,"\t\t\t\tthrow new RuntimeException(\"Not a WKT string\");"
+    print >>fo,"\t\t\t} " #end of catch       
 
     print >>fo, "\t\t}\n"
     print >>fo, "\t}\n"
@@ -3889,18 +3977,18 @@ def ysmart_code_gen(argv,input_path,output_path):
 
     
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
     
     #spatial
-    schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/21TEST.schema'
-    xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/SPCODETEST4_1.xml'
+    #schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/21TEST.schema'
+    #xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/21TEST7.xml'
     
-    print 'Query Plan For:',xml_file
+    #print 'Query Plan For:',xml_file
     #non-spatial
     #schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/tpch_query.schema'
     #xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/FISIER_query.xml'
-    params=['',schema, xml_file]
+    #params=['',schema, xml_file]
     
-    ysmart_code_gen(params,'','')
+    #ysmart_code_gen(params,'','')
     
     
