@@ -4,7 +4,7 @@ import org.apache.hadoop.conf.*;
 
 public class ReducerRESQUE extends Configured{
 
-  public static void main(String[] args) {
+  public static void main (String[] args) throws Exception{
 
   String[] res=new ReducerRESQUE().intersects("INTER","resque_text.txt");
   System.out.println("");
