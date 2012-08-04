@@ -44,8 +44,8 @@ def genHadoopJobs(schemaFile, tmpFilePath, queryName, queryInputPath, queryOutpu
     subprocess.check_call(cmd, shell=True)
 
 def print_usage():
-    print 'usage 1: ./translate.py <query-file>.sql <schema-file>.schema'
-    print 'usage 2: ./translate.py <query-file>.sql <schema-file>.schema <query-name> <query-input-path> <query-output-path>'
+    print 'usage 1: ./translate_spatial.py <query-file>.sql <schema-file>.schema'
+    print 'usage 2: ./translate_spatial.py <query-file>.sql <schema-file>.schema <query-name> <query-input-path> <query-output-path>'
 
 def main():
     if (len(sys.argv) != 6 and len(sys.argv) != 3):
