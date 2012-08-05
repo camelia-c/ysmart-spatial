@@ -28,5 +28,5 @@ exec_jar = False
 output_path = None
 input_path = None
 queryname = 'testquery'
-scriptname = None
+scriptname = 'gen_compile_script'
 
