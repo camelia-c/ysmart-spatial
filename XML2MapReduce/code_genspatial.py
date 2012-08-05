@@ -25,6 +25,8 @@ import correlationspatial
 import config
 import pycallgraph
 import string
+import subprocess
+
 
 ##input exp should be YFuncExp
 
@@ -43,6 +45,12 @@ packagename = "edu.osu.cse.ysmart"
 
 calls_resque=0
 name_generated_file=''
+
+CURRENT_DIR = os.getcwd()
+FRONTEND_DIR = 'SpatialSQL2XML'
+BACKEND_DIR = 'XML2MapReduce'
+EXEC_DIR = 'bin'
+JTS_DIR='jts_library'
 
 ### a function to generate non-spatialjoin but spatial operators code
 ####input: @exp: the sql expression than you want to translate. If the exp is an agg operation, it will return the jave exp of its argument based on JavaTopologySuite
@@ -3697,7 +3705,7 @@ def generate_code(tree,filename):
         fo = open(op_name,"w")
         name_generated_file=op_name
         calls_resque=1
-        #print 'generated code for TwoJoinSpatialNode in file:'+op_name
+        print 'generated code for TwoJoinSpatialNode in file:'+op_name
         
         if not isinstance(tree.left_child,ystreespatial.TableNode):
                 new_name = filename[:-1]  +str(int(filename[-1])+1)
@@ -3748,22 +3756,53 @@ def generate_code(tree,filename):
     fo.close()
 
 def compile_class(tree,codedir,package_path,filename,fo):
-
+    print 'current directory:',CURRENT_DIR
+    os.chdir(''+CURRENT_DIR+'/')
+    
     version = "0.21.0"
     if "HADOOP_HOME" in os.environ:
         version = commands.getoutput("$HADOOP_HOME/bin/hadoop version").split("\n")[0].split(" ")[1]
 
-    cmd = "javac -classpath $HADOOP_HOME/hadoop-common-"+version+".jar:$HADOOP_HOME/hadoop-hdfs-"+version+".jar:$HADOOP_HOME/hadoop-mapred-"+version+".jar " 
+    #cmd = "javac -classpath $HADOOP_HOME/hadoop-common-"+version+".jar:$HADOOP_HOME/hadoop-hdfs-"+version+".jar:$HADOOP_HOME/hadoop-mapred-"+version+".jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jts-1.12.jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jtsio-1.12.jar:"+CURRENT_DIR+"/"+BACKEND_DIR+" " #general
+    
+    cmd = "javac -classpath /usr/lib/hadoop-0.20/hadoop-core-0.20.2-cdh3u3.jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jts-1.12.jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jtsio-1.12.jar:"+CURRENT_DIR+"/"+BACKEND_DIR+" " #with cloudera
     cmd += codedir + "/*.java -d ." 
+    print 'compiling generated classes command.........................................'
+    print '',cmd
+    print ''
+    print ''
+    print ''
     print >>fo,cmd
     if config.compile_jar is True:
         os.system(cmd)
+    
+    #moving the generated folder with classes under the YSmartCode
+    subprocess.check_call(['mv', 'edu', CURRENT_DIR + '/' + codedir])
+    print '.........................................................................'
 
-def generate_jar(jardir,path,filename,fo):
+def generate_jar(jardir,path,filename,fo,resultdir,codedir):
+    
+    os.chdir(''+CURRENT_DIR+'/')
+    #copy the integration glue java file from XML2MapReduce/edu/.. to result/YSmartCode/..
+    print 'jar-ing generated classes command.........................................'
+    
+    print ''
+    cmd2='cp '+ CURRENT_DIR+"/"+BACKEND_DIR+'/edu  '+ CURRENT_DIR + '/' + resultdir[2:]+'/'+codedir[2:]+' -r'    
+    print >>fo,cmd2
+    print cmd2    
+    
     cmd = "jar -cf " +jardir + "/"+ filename + ".jar " + path
+    
     print >>fo,cmd
+    print cmd
+    
+    
+    
+    
     if config.compile_jar is True:
+        subprocess.check_call(['cp', CURRENT_DIR+"/"+BACKEND_DIR+'/edu', CURRENT_DIR + '/' + resultdir[2:]+'/'+codedir[2:],'-r'])
         os.system(cmd)
+    print '.........................................................................'
 
 
 def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
@@ -3965,9 +4004,9 @@ def ysmart_code_gen(argv,input_path,output_path):
 
     os.chdir(resultdir)
 
-    #fo = open(config.scriptname,'w')
-    #compile_class(tree_node,codedir,packagepath,config.queryname,fo)
-    #generate_jar(jardir,packagepath,config.queryname,fo)
+    fo = open(config.scriptname,'w')
+    compile_class(tree_node,resultdir+codedir[1:],packagepath,config.queryname,fo)
+    generate_jar(resultdir+jardir[1:],resultdir+codedir[1:]+'/'+packagepath,config.queryname,fo,resultdir,codedir)
 
     #execute_jar(tree_node,jardir,config.queryname,config.queryname,input_path,output_path,fo)
 
