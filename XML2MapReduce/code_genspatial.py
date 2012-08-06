@@ -3980,8 +3980,14 @@ def ysmart_code_gen(argv,input_path,output_path):
     if os.path.exists(resultdir) is False:
         os.makedirs(resultdir)
     else:
-        print 'the result folder already exists'
-    
+        print 'the result folder already exists-->will remove its contents'
+        os.chdir(resultdir)
+        print 'rm -rf '+codedir
+        subprocess.check_call(['rm', '-rf', codedir])  
+        print 'rm -rf '+jardir
+        subprocess.check_call(['rm', '-rf', jardir])  
+            
+    os.chdir(CURRENT_DIR)
     os.chdir(resultdir)
     if os.path.exists(codedir) or os.path.exists(jardir):
         pass
