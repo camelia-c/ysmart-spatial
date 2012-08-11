@@ -2,20 +2,3 @@
  DEPRECATED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-#include <jni.h>
-
-#ifndef __ReducerRESQUE__
-#define __ReducerRESQUE__
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-JNIEXPORT jint JNICALL Java_ReducerRESQUE_intersects (JNIEnv *env, jobject, jstring, jstring);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __ReducerRESQUE__ */
