@@ -66,10 +66,8 @@ cd ./ysmartspatial
 python ./setup_spatial.py install
 
 
-  5. Optional, re-generating the JNI integration library, in case you modify the body of the method ReducerRESQUE.cpp
+  5. Optional, re-generating the JNI integration library, in case you modify the body of the method in ReducerRESQUE.cpp
 
 cd ./ysmartspatial
 
 python ./setup_integration.py install
-
-
