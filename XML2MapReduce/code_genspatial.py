@@ -2382,11 +2382,15 @@ def __join_gen_mr__(tree,left_name,fo):
                 print >>fo,"\t\t\t\tfor(int i=0;i<" + right_array + ".size();i++){\n"
                 print >>fo,"\t\t\t\t\tString[] " + right_line_buffer + " = ((String)" + right_array + ".get(i)).split(\"\\\|\");"            
                 print >>fo,"\t\t\t\t\tout.write(\"TILENAME\tR\t\"+i+\"\t\"+"+partssstr1[1]+"\t);\n"
+                print >>fo, "\t\t\t\t\tif(i!=("+right_array+".size()-1)){\n"
+                print >>fo, "\t\t\t\t\t\t out.newLine();\n"
+                print >>fo, "\t\t\t\t\t}\n"
                 print >>fo, "\t\t\t\t}\n"
                 
                 #writing the part for the LEFT source of the spatial join
                 print >>fo,"\t\t\t\tfor(int i=0;i<" + left_array + ".size();i++){\n"
-                print >>fo,"\t\t\t\t\tString[] " + left_line_buffer + " = ((String)" + left_array + ".get(i)).split(\"\\\|\");"            
+                print >>fo,"\t\t\t\t\tString[] " + left_line_buffer + " = ((String)" + left_array + ".get(i)).split(\"\\\|\");" 
+                print >>fo,"\t\t\t\t\tout.newLine();\n"
                 print >>fo,"\t\t\t\t\tout.write(\"TILENAME\tL\t\"+i+\"\t\"+"+partssstr1[2]+"\t);\n"
                 print >>fo, "\t\t\t\t}\n"                
                 
@@ -3489,9 +3493,14 @@ def __gen_main__(tree,fo,map_key_type,map_value_type,reduce_key_type,reduce_valu
     if reduce_bool is True:
         print >>fo,"\t\tjob.setReducerClass(Reduce.class);"
     if isinstance(tree,ystreespatial.TwoJoinNode):
-        print >>fo, "\t\tFileInputFormat.addInputPath(job,new Path(args[0]));"
-        print >>fo, "\t\tFileInputFormat.addInputPath(job,new Path(args[1]));"
-        print >>fo,"\t\tFileOutputFormat.setOutputPath(job, new Path(args[2]));"
+        self_join_bool = __self_join__(tree)
+        if self_join_bool is True:
+            print >>fo, "\t\tFileInputFormat.addInputPath(job,new Path(args[0]));"
+            print >>fo,"\t\tFileOutputFormat.setOutputPath(job, new Path(args[1]));"
+        else:
+            print >>fo, "\t\tFileInputFormat.addInputPath(job,new Path(args[0]));"
+            print >>fo, "\t\tFileInputFormat.addInputPath(job,new Path(args[1]));"
+            print >>fo,"\t\tFileOutputFormat.setOutputPath(job, new Path(args[2]));"
     elif isinstance(tree,ystreespatial.CompositeNode):
         in_len = len(tree.mapoutput.keys())
         for i in range(0,in_len):
@@ -3782,6 +3791,8 @@ def compile_class(tree,codedir,package_path,filename,fo):
 
 def generate_jar(jardir,path,filename,fo,resultdir,codedir):
     
+    global packagepath
+    
     os.chdir(''+CURRENT_DIR+'/')
     #copy the integration glue java file from XML2MapReduce/edu/.. to result/YSmartCode/..
     print 'jar-ing generated classes command.........................................'
@@ -3791,7 +3802,26 @@ def generate_jar(jardir,path,filename,fo,resultdir,codedir):
     print >>fo,cmd2
     print cmd2    
     
-    cmd = "jar -cf " +jardir + "/"+ filename + ".jar " + path
+    #os.chdir(''+CURRENT_DIR+'/')  #correct before
+    #cmd = "jar -cf " +jardir + "/"+ filename + ".jar " + path  #correct before
+    os.chdir(''+CURRENT_DIR+'/'+resultdir[2:]+'/'+codedir[2:])
+    
+    #was intended to copy the library .so into the jar-->deprecated
+    #cmd3='cp '+ CURRENT_DIR+'/bin/libReducerRESQUE.so  '+ CURRENT_DIR + '/' + resultdir[2:]+'/'+codedir[2:]    
+    #print >>fo,cmd3
+    #print cmd3 
+    #cmd = "jar -u ./libReducerRESQUE.so -cf " +"../YSmartJar/"+ filename + ".jar " + packagepath  
+    
+    #was intended to enhance the manifest in the jar with classpath of.so -->deprecated    
+    #cmd4='cp '+ CURRENT_DIR+'/bin/manifest_file.MF  '+ CURRENT_DIR + '/' + resultdir[2:]+'/'+codedir[2:]    
+    #print >>fo,cmd4
+    #print cmd4     
+    #cmd = "jar -cfm " +"../YSmartJar/"+ filename + ".jar  ./manifest_file.MF " + packagepath
+    
+    
+    cmd = "jar -cf " +"../YSmartJar/"+ filename + ".jar " + packagepath  
+    
+    
     
     print >>fo,cmd
     print cmd
@@ -3800,6 +3830,8 @@ def generate_jar(jardir,path,filename,fo,resultdir,codedir):
     
     
     if config.compile_jar is True:
+        #subprocess.check_call(['cp', CURRENT_DIR+'/bin/manifest_file.MF', CURRENT_DIR + '/' + resultdir[2:]+'/'+codedir[2:]])  #deprecated
+        #subprocess.check_call(['cp', CURRENT_DIR+'/bin/libReducerRESQUE.so', CURRENT_DIR + '/' + resultdir[2:]+'/'+codedir[2:]]) #deprecated
         subprocess.check_call(['cp', CURRENT_DIR+"/"+BACKEND_DIR+'/edu', CURRENT_DIR + '/' + resultdir[2:]+'/'+codedir[2:],'-r'])
         os.system(cmd)
     print '.........................................................................'
@@ -3810,7 +3842,8 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
     ret_name = classname
     
     if isinstance(tree,ystreespatial.TableNode):
-        cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " "  + input_path + "/" + tree.table_name + "/" 
+        #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " "  + input_path + "/" + tree.table_name + "/"  #was in YSmart
+        cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir + "/" + jarname + ".jar " + packagepath + classname + " "  + input_path + "/" + tree.table_name + "/" 
         cmd += " " + output_path + "/" + tree.table_name + "/" 
         print >>fo, cmd
         if config.compile_jar is True and config.exec_jar is True:
@@ -3831,10 +3864,12 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
                     new_name = tree.composite.output + "/" + str(index)
             else:
                 ret_name = execute_jar(tree.child,jardir,jarname,new_name,input_path,output_path,fo)
-            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/" + new_name
+            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/" + new_name #was in YSmart
+            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/" + new_name 
             cmd += " " + output_path + "/" + classname + "/"
         else:
-            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" + tree.child.table_name + "/"
+            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" + tree.child.table_name + "/" #was in YSmart
+            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" + tree.child.table_name + "/" 
             cmd += " " + output_path + "/" + classname + "/"
 
         print >>fo,cmd
@@ -3860,17 +3895,23 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
                 
             else:
                 ret_name = execute_jar(tree.child,jardir,jarname,new_name,input_path,output_path,fo)
-            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " + output_path + "/" + new_name
+            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " + output_path + "/" + new_name #was in YSmart
+            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath + classname + " " + output_path + "/" + new_name
             cmd += " " + output_path + "/" + classname + "/"
         else:
-            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " + input_path + "/" + tree.child.table_name + "/" 
+            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " + input_path + "/" + tree.child.table_name + "/" #was in YSmart
+            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath + classname + " " + input_path + "/" + tree.child.table_name + "/"
             cmd += " " + output_path + "/" + classname + "/"
         print >>fo,cmd
         if config.compile_jar is True and config.exec_jar is True:
             os.system(cmd)
 
     elif isinstance(tree,ystreespatial.TwoJoinNode):
-        cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/"
+        #verify about self-join
+        self_join_bool = __self_join__(tree)
+        
+        #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" #was in YSmart
+        cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/"
         if not isinstance(tree.left_child,ystreespatial.TableNode):
             new_name = classname[:-1] + str(int(classname[-1])+1)
             if tree.left_composite is not None:
@@ -3887,33 +3928,38 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
                     new_name = tree.left_composite.output + "/" + str(index)
             else:
                 ret_name = execute_jar(tree.left_child,jardir,jarname,new_name,input_path,output_path,fo)
-            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/"
+            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/" #was in YSmart
+            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/"
             cmd += new_name + "/"
         else:
-            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/"
+            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" #was in YSmart
+            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" 
             cmd += tree.left_child.table_name + "/"
             ret_name = classname
+            
+        #treat right only if it is not self-join
+        if self_join_bool is False:
 
-        if not isinstance(tree.right_child,ystreespatial.TableNode):
-            new_name = ret_name[:-1]  + str(int(ret_name[-1])+1)
-            if tree.right_composite is not None:
-                if tree.right_composite.dep != -2:
-                    ret_name = execute_jar(tree.right_composite,jardir,jarname,new_name,input_path,output_path,fo)
-                if len(tree.right_composite.jfc_node_list) == 0:
-                    index = -1
-                    for node in tree.right_composite.it_node_list:
-                        if node.parent == tree:
-                            index = tree.right_composite.it_node_list.index(node)
-                            tree.right_composite.it_node_list[index].parent = None
-                            break
-                    new_name = tree.right_composite.output + "/" + str(index)
+            if not isinstance(tree.right_child,ystreespatial.TableNode):
+                new_name = ret_name[:-1]  + str(int(ret_name[-1])+1)
+                if tree.right_composite is not None:
+                    if tree.right_composite.dep != -2:
+                        ret_name = execute_jar(tree.right_composite,jardir,jarname,new_name,input_path,output_path,fo)
+                    if len(tree.right_composite.jfc_node_list) == 0:
+                        index = -1
+                        for node in tree.right_composite.it_node_list:
+                            if node.parent == tree:
+                                index = tree.right_composite.it_node_list.index(node)
+                                tree.right_composite.it_node_list[index].parent = None
+                                break
+                        new_name = tree.right_composite.output + "/" + str(index)
+                else:
+                    ret_name = execute_jar(tree.right_child,jardir,jarname,new_name,input_path,output_path,fo)
+                cmd += " " + output_path + "/"
+                cmd += new_name + "/"
             else:
-                ret_name = execute_jar(tree.right_child,jardir,jarname,new_name,input_path,output_path,fo)
-            cmd += " " + output_path + "/"
-            cmd += new_name + "/"
-        else:
-            cmd += " " + input_path + "/"
-            cmd += tree.right_child.table_name + "/"
+                cmd += " " + input_path + "/"
+                cmd += tree.right_child.table_name + "/"
 
         cmd += " " + output_path + "/" + classname + "/"
         print >>fo,cmd
@@ -3931,7 +3977,8 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
         child_list = []
         new_name = classname[:-1] + str(int(classname[-1])+1)
         child_list.append(new_name)
-        cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " 
+        #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " "  #was in YSmart
+        cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " 
         for node in tree.child_list:
             ret_name = execute_jar(node,jardir,jarname,new_name,input_path,output_path,fo)
             new_name = ret_name[:-1] + str(int(new_name[-1])+1)
@@ -4014,7 +4061,7 @@ def ysmart_code_gen(argv,input_path,output_path):
     compile_class(tree_node,resultdir+codedir[1:],packagepath,config.queryname,fo)
     generate_jar(resultdir+jardir[1:],resultdir+codedir[1:]+'/'+packagepath,config.queryname,fo,resultdir,codedir)
 
-    #execute_jar(tree_node,jardir,config.queryname,config.queryname,input_path,output_path,fo)
+    execute_jar(tree_node,jardir,config.queryname,config.queryname,input_path,output_path,fo)
 
     os.chdir(pwd)
     
