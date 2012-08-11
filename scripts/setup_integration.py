@@ -34,6 +34,13 @@ def setup_integrate_install():
     os.chdir(CURRENT_DIR + '/' + BACKEND_DIR)
     print 'chdir to...',os.getcwd()
     #compile the java code for integration
+    version = "0.21.0"
+    if "HADOOP_HOME" in os.environ:
+        version = commands.getoutput("$HADOOP_HOME/bin/hadoop version").split("\n")[0].split(" ")[1]
+    #print 'javac -classpath $HADOOP_HOME/hadoop-common-'+version+'.jar:$HADOOP_HOME/hadoop-hdfs-'+version+'.jar:$HADOOP_HOME/hadoop-mapred-'+version+'.jar  ReducerRESQUE.java -d .'
+    #print '--------------------------------------------------------------------'    
+    #subprocess.check_call(['javac', '-classpath', '$HADOOP_HOME/hadoop-common-'+version+'.jar:$HADOOP_HOME/hadoop-hdfs-'+version+'.jar:$HADOOP_HOME/hadoop-mapred-'+version+'.jar', 'ReducerRESQUE.java', '-d', '.'])    
+    
     print 'javac -classpath /usr/lib/hadoop-0.20/hadoop-core-0.20.2-cdh3u3.jar  ReducerRESQUE.java -d .' 
     print '--------------------------------------------------------------------'    
     subprocess.check_call(['javac', '-classpath', '/usr/lib/hadoop-0.20/hadoop-core-0.20.2-cdh3u3.jar', 'ReducerRESQUE.java', '-d', '.'])    
@@ -74,7 +81,7 @@ def setup_integrate_uninstall():
     subprocess.check_call(['rm', 'libReducerRESQUE.so'])
     
     print 'rm -rf ./edu'
-    subprocess.check_call(['rm', '-rf', './edu'])
+    #subprocess.check_call(['rm', '-rf', './edu'])
     os.chdir(CURRENT_DIR)
     
     return 
