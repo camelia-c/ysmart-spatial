@@ -19,6 +19,7 @@ public class ReducerRESQUE extends Configured{
 
   static 
   {
-    System.loadLibrary("ReducerRESQUE");
+    
+    System.load(""+System.getProperty("user.dir").substring(0,(System.getProperty("user.dir").lastIndexOf("/"))+1)+"/bin/libReducerRESQUE.so"); 
   }
 }
