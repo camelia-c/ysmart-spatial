@@ -21,7 +21,7 @@ turn_on_correlation = False
 advanced_agg = False
 
 ### compiling options
-compile_jar = False
+compile_jar = True
 exec_jar = False
 
 ### execution parameters
