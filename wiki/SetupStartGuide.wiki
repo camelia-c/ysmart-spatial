@@ -1,0 +1,75 @@
+#labels ysmartspatial,setup,guide
+= YSmartSpatial Setup Start Guide =
+
+== Pre-requisites for YSmartSpatial ==
+
+Pre-requisites for YSmartSpatial include  YSmart's pre-requisites, plus some additional specific ones:
+
+  * A linux system with GCC (and G++) and Python installed.
+  * Java 1.6
+  * Hadoop 0.20.x or Hadoop 0.21.x 
+  * gcj-4.3   (needed for javah command)
+
+
+== Download ==
+
+The latest release is ysmartspatial_release_alpha2.zip and can be downloaded [http://code.google.com/p/ysmart-spatial/downloads/detail?name=ysmartspatial_release_alpha2.zip here]
+
+Resources from Internet, open source:
+
+||boost_1_48_0.tar.gz|| http://www.boost.org/users/history/version_1_48_0.html ||
+||                   ||
+||jts-1.12.zip       || http://sourceforge.net/projects/jts-topo-suite/        ||
+||                   || http://tsusiatsoftware.net/jts/main.html               ||
+||                   || formerly was http://www.vividsolutions.com/jts/jtshome.htm||
+
+
+== Install YSmartSpatial ==
+
+  1. After you download the archive, extract it in a folder.
+
+  2. Ensure the correct contents of the folders /jts_library and /boost_library as follows:
+  
+|*--boost_library/*
+
+ |---- boost/                  (needs manual copying of folder boost/ from boost_1_48_0.tar.gz , after extracting the archive)
+
+ |--------accumulators/
+
+ |--------algorithm/
+
+ |--------and so on.....
+
+|*--jts_library/ *               (it is fully provided, it was copied the jars from lib/ from jts-1.12.zip , after extracting the archive)   
+ |---- acme.jar
+
+ |---- jdom.jar
+
+ |---- jts-1.12.jar
+
+ |---- JTS_Test.jar
+
+ |---- jtsio-1.12.jar
+
+ |---- junit.jar
+
+ |---- xerces.jar
+
+  3. Choose your appropriate Hadoop distribution and modify accordingly in the following two places:
+  * file setup_integration.py , lines 40-42 / 44-46     (in method setup_integrate_install) :  for cloudera leave 44-46 uncommented and comment 40-42; for other distributions leave 40-42 uncommented and comment 44-46:
+  * file code_genspatial.py,    lines 3775 / 3777 (in method compile_class):  for cloudera leave 3777 uncommented and comment 3775; for other distribution leave 3775 uncommented and comment 3777 .
+
+  4. Execute:
+
+cd ./ysmartspatial
+
+python ./setup_spatial.py install
+
+
+  5. Optional, re-generating the JNI integration library, in case you modify the body of the method ReducerRESQUE.cpp
+
+cd ./ysmartspatial
+
+python ./setup_integration.py install
+
+
