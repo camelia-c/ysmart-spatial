@@ -9,11 +9,12 @@ Pre-requisites for YSmartSpatial include  YSmart's pre-requisites, plus some add
   * Java 1.6
   * Hadoop 0.20.x or Hadoop 0.21.x 
   * gcj-4.3   (needed for javah command)
+  * cmake     (needed while installing CGAL)
 
 
 == Download ==
 
-The latest release is ysmartspatial_release_alpha2.zip and can be downloaded [http://code.google.com/p/ysmart-spatial/downloads/detail?name=ysmartspatial_release_alpha2.zip here]
+The latest release is ysmartspatial_release_beta1.zip and can be downloaded [http://code.google.com/p/ysmart-spatial/downloads/detail?name=ysmartspatial_beta1.zip here]
 
 Resources from Internet, open source:
 
@@ -22,6 +23,7 @@ Resources from Internet, open source:
 ||jts-1.12.zip       || http://sourceforge.net/projects/jts-topo-suite/        ||
 ||                   || http://tsusiatsoftware.net/jts/main.html               ||
 ||                   || formerly was http://www.vividsolutions.com/jts/jtshome.htm||
+||CGAL-3.8.tar.gz    ||https://scm.cci.emory.edu/svn/virtual-gis/trunk/spatial/downloads/||
 
 
 == Install YSmartSpatial ==
@@ -59,15 +61,93 @@ Resources from Internet, open source:
   * file setup_integration.py , lines 40-42 / 44-46     (in method setup_integrate_install) :  for cloudera leave 44-46 uncommented and comment 40-42; for other distributions leave 40-42 uncommented and comment 44-46:
   * file code_genspatial.py,    lines 3775 / 3777 (in method compile_class):  for cloudera leave 3777 uncommented and comment 3775; for other distribution leave 3775 uncommented and comment 3777 .
 
-  4. Execute:
+
+
+  4. Install spatialindex
+
+Suppose we extracted the spatialindex-src-1.6.1.zip  provided in downloads/ folder of this release to the path   /home/camelia/Documents/gsoc_emory/resque/spatialindex-src-1.6.1/ 
+
+./configure --prefix=/home/camelia/Documents/gsoc_emory/resque/usr
+
+make
+
+make install
+
+
+The results of this installation, that we shall further use, are placed in:
+SPATIAL_SETUP_FOLDER_LIB="/home/camelia/Documents/gsoc_emory/resque/usr/lib"
+SPATIAL_SETUP_FOLDER_INCLUDE="/home/camelia/Documents/gsoc_emory/resque/usr/include"
+Please go now to /ysmartspatial/setup_integration2.py and set these 2 variables according to your own paths
+
+
+
+ 5. Install boost
+Suppose that we downloaded boost_1_48_0.tar.gz provided at http://www.boost.org/users/history/version_1_48_0.html to the path /home/camelia/Documents/gsoc_emory/resque/downloads
+
+cd /home/camelia/Documents/gsoc_emory/resque/downloads
+
+tar -xzvf boost_1_48_0.tar.gz
+
+cd /home/camelia/Documents/gsoc_emory/resque/downloads/boost_1_48_0
+
+./bootstrap.sh
+
+./bjam
+
+./bjam install –prefix=/home/camelia/Documents/gsoc_emory/resque/usr
+
+
+The results of this installation, that we shall further use, are placed in the same paths as those of spatialindex, i.e. :
+SPATIAL_SETUP_FOLDER_LIB="/home/camelia/Documents/gsoc_emory/resque/usr/lib"
+SPATIAL_SETUP_FOLDER_INCLUDE="/home/camelia/Documents/gsoc_emory/resque/usr/include"
+You already set these variables in the /ysmartspatial/setup_integration2.py before, so please continue to next step, 6).
+
+ 6. Install CGAL
+
+Suppose that we downloaded CGAL-3.8.tar.gz provided  at    https://scm.cci.emory.edu/svn/virtual-gis/trunk/spatial/downloads/  to the path  /home/camelia/Documents/gsoc_emory/resque/
+
+cd /home/camelia/Documents/gsoc_emory/resque/
+
+tar -xzvf  CGAL-3.8.tar.gz
+
+cd /home/camelia/Documents/gsoc_emory/resque/CGAL-3.8
+
+export BOOST_ROOT=/home/camelia/Documents/gsoc_emory/resque/usr
+
+rm CmakeCache.txt
+
+cmake . 
+
+make
+
+
+The results of this installation, that we shall further use, are placed in:
+CGAL_SETUP_FOLDER_LIB="/home/camelia/Documents/gsoc_emory/resque/CGAL-3.8/lib"
+CGAL_SETUP_FOLDER_INCLUDE="/home/camelia/Documents/gsoc_emory/resque/CGAL-3.8/include"
+
+Please go now to /ysmartspatial/setup_integration2.py and set these 2 variables according to your own paths
+
+
+  7. Then get back to the folder ysmartspatial and execute the command: 
 
 cd ./ysmartspatial
 
 python ./setup_spatial.py install
 
 
-  5. Optional, re-generating the JNI integration library, in case you modify the body of the method in ReducerRESQUE.cpp
+
+
+ 8. Optional, re-generating the JNI integration library:
+
+8.1) based on ReducerRESQUE_1.cpp:
 
 cd ./ysmartspatial
+python ./setup_integration_1.py install
 
-python ./setup_integration.py install
+8.2) based on ReducerRESQUE_2.cpp:
+
+cd ./ysmartspatial
+python ./setup_integration_2.py install
+
+Please note that at one moment in time, only one version of the CPP file can be active. Switching between ReducerRESQUE_1.cpp and ReducerRESQUE_2.cpp needs this step of regenerating the JNI integration library.
+By default, at step 0), while preparing the environment, version ReducerRESQUE_1.cpp is used for building the integration library, libReducerRESQUE.so.
