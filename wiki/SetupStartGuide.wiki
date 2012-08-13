@@ -58,7 +58,7 @@ Resources from Internet, open source:
  |---- xerces.jar
 
   3. Choose your appropriate Hadoop distribution and modify accordingly in the following two places:
-  * file setup_integration.py , lines 40-42 / 44-46     (in method setup_integrate_install) :  for cloudera leave 44-46 uncommented and comment 40-42; for other distributions leave 40-42 uncommented and comment 44-46:
+  * file setup_integration_1.py and file setup_integration_2.py, lines 40-42 / 44-46     (in method setup_integrate_install) :  for cloudera leave 44-46 uncommented and comment 40-42; for other distributions leave 40-42 uncommented and comment 44-46:
   * file code_genspatial.py,    lines 3775 / 3777 (in method compile_class):  for cloudera leave 3777 uncommented and comment 3775; for other distribution leave 3775 uncommented and comment 3777 .
 
 
