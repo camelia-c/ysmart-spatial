@@ -1,0 +1,74 @@
+#labels execution,guide,scenario
+= Guide and Scenario for Executing YSmartSpatial =
+
+
+After installing YSmartSpatial, following the steps in the readme (also available in the wiki at http://code.google.com/p/ysmart-spatial/wiki/SetupStartGuide), we are now ready for executing it.
+By default, the environment is set up to use version 1 of RESQUE.
+
+FOR EXECUTION WE NEED TO:
+
+1) manually copy the file ./ysmartspatial/jts_library/jts-1.12.jar  to  $HADOOP_HOME/lib
+
+2) See again what you configured during installation as SPATIAL_SETUP_FOLDER_LIB and CGAL_SETUP_FOLDER_LIB. 
+Then manually edit the $HADOOP_HOME/conf/hadoop-env.sh file and add the following line in it:
+
+export LD_LIBRARY_PATH= [PATH TO YOUR YSMARTSPATIAL]/ysmartspatial/bin:[SPATIAL_SETUP_FOLDER_LIB]:[CGAL_SETUP_FOLDER_LIB]
+
+
+
+
+=== Generating the MapReduce jobs: ===
+
+cd ./ysmartspatial
+
+python translate_spatial.py ./test/cerere_simpla7_2.sql ./test/BIOMEDICAL.schema
+
+The result is found in ./ysmartspatial/result and consists of:
+  *  the YSmartCode folder , with the generated Java files
+  *  the YSmartJar folder  , with the generated JAR files
+  *  the  script with commands for execution.
+
+
+=== Running the MapReduce jobs:  ===
+
+From the automatically generated script file found in ./ysmartspatial/result , we need to issue the commands beinning with $HADOOP_HOME/bin/hadoop jar ........ that correspond to running mapreduce jobs on Hadoop.
+
+When debugging in a single-node Hadoop environment, for the example of our query above, the following commands are used (remember that in advance we have copied ./ysmartspatial/jts_library/jts-1.12.jar  to  $HADOOP_HOME/lib  ):
+
+cd ./ysmartspatial/result 
+
+$HADOOP_HOME/bin/hadoop jar  ./YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery1 YSmartInput//MARKUP/ YSmartOutput//testquery1/ 
+
+The result can be read in the output file or can be viewed in terminal after issuing the command:
+
+cat YSmartOutput/testquery1/*
+
+cd ..
+
+
+=== Switching to version 2 of RESQUE , for benchmarking ==
+
+Now let us switch to the version 2 of RESQUE, for benchmarking. We issue the commands :
+
+python ./setup_integration_1.py uninstall
+
+python ./setup_integration_2.py install
+
+
+=== Generating the MapReduce jobs again, for the new configuration: ===
+
+We generate again the MapReduce jobs, in this new configuration of the environment:
+
+python translate_spatial.py ./test/cerere_simpla7_2.sql ./test/BIOMEDICAL.schema
+
+=== Running the MapReduce jobs again, for the new configuration: ===
+
+Running the MapReduce jobs:
+
+cd ./ysmartspatial/result 
+
+$HADOOP_HOME/bin/hadoop jar  ./YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery1 YSmartInput//MARKUP/ YSmartOutput//testquery1/ 
+
+The result can be read in the output file or can be viewed in terminal after issuing the command:
+
+cat YSmartOutput/testquery1/*
