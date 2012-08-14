@@ -12,12 +12,12 @@ FOR EXECUTION WE NEED TO:
 2) See again what you configured during installation as SPATIAL_SETUP_FOLDER_LIB and CGAL_SETUP_FOLDER_LIB. 
 Then manually edit the $HADOOP_HOME/conf/hadoop-env.sh file and add the following line in it:
 
-export LD_LIBRARY_PATH= [PATH TO YOUR YSMARTSPATIAL]/ysmartspatial/bin:[SPATIAL_SETUP_FOLDER_LIB]:[CGAL_SETUP_FOLDER_LIB]
+export LD_LIBRARY_PATH= [PATH_TO_YOUR_YSMARTSPATIAL]/ysmartspatial/bin:[SPATIAL_SETUP_FOLDER_LIB]:[CGAL_SETUP_FOLDER_LIB]
 
 
 
 
-=== Generating the MapReduce jobs: ===
+=== Generating the MapReduce jobs ===
 
 cd ./ysmartspatial
 
@@ -29,7 +29,7 @@ The result is found in ./ysmartspatial/result and consists of:
   *  the  script with commands for execution.
 
 
-=== Running the MapReduce jobs:  ===
+=== Running the MapReduce jobs  ===
 
 From the automatically generated script file found in ./ysmartspatial/result , we need to issue the commands beinning with $HADOOP_HOME/bin/hadoop jar ........ that correspond to running mapreduce jobs on Hadoop.
 
@@ -55,13 +55,13 @@ python ./setup_integration_1.py uninstall
 python ./setup_integration_2.py install
 
 
-=== Generating the MapReduce jobs again, for the new configuration: ===
+=== Generating the MapReduce jobs again, for the new configuration ===
 
 We generate again the MapReduce jobs, in this new configuration of the environment:
 
 python translate_spatial.py ./test/cerere_simpla7_2.sql ./test/BIOMEDICAL.schema
 
-=== Running the MapReduce jobs again, for the new configuration: ===
+=== Running the MapReduce jobs again, for the new configuration ===
 
 Running the MapReduce jobs:
 
