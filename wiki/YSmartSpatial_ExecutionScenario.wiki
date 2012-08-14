@@ -32,6 +32,7 @@ The result is found in ./ysmartspatial/result and consists of:
 === Running the MapReduce jobs  ===
 
 From the automatically generated script file found in ./ysmartspatial/result , we need to issue the commands beinning with $HADOOP_HOME/bin/hadoop jar ........ that correspond to running mapreduce jobs on Hadoop.
+Until next release beta2,  please remove the -libjars segment of the command, which is unnecessary and misplaced.
 
 When debugging in a single-node Hadoop environment, for the example of our query above, the following commands are used (remember that in advance we have copied ./ysmartspatial/jts_library/jts-1.12.jar  to  $HADOOP_HOME/lib  ):
 
