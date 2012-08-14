@@ -1,8 +1,17 @@
 #labels execution,guide,scenario
 = Guide and Scenario for Executing YSmartSpatial =
 
+We describe here an execution scenario for YSmartSpatial:
+  * we have already installed it --> it is be default configured to use version 1 of RESQUE
+  * we execute the whole jar generation and execution chain for a query , say  /ysmartspatial/test/cerere_simpla7_2.sql
+  * we switch the configuration of YSmartSpatial to use version 2 of RESQUE
+  * we execute again the whole jar generation and execution chain for a query , say  /ysmartspatial/test/cerere_simpla7_2.sql
+  * we might want to switch back again to use version 1 of RESQUE
+
+
 
 After installing YSmartSpatial, following the steps in the readme (also available in the wiki at http://code.google.com/p/ysmart-spatial/wiki/SetupStartGuide), we are now ready for executing it.
+
 By default, the environment is set up to use version 1 of RESQUE.
 
 FOR EXECUTION WE NEED TO:
@@ -73,3 +82,13 @@ $HADOOP_HOME/bin/hadoop jar  ./YSmartJar/testquery1.jar edu/osu/cse/ysmart/testq
 The result can be read in the output file or can be viewed in terminal after issuing the command:
 
 cat YSmartOutput/testquery1/*
+
+
+
+=== Switching back to version 1 of RESQUE , for benchmarking ===
+
+Now let us switch back to the version 1 of RESQUE, for benchmarking. We issue the commands :
+
+python ./setup_integration_2.py uninstall
+
+python ./setup_integration_1.py install
