@@ -41,6 +41,7 @@ The result is found in ./ysmartspatial/result and consists of:
 === Running the MapReduce jobs  ===
 
 From the automatically generated script file found in ./ysmartspatial/result , we need to issue the commands beinning with $HADOOP_HOME/bin/hadoop jar ........ that correspond to running mapreduce jobs on Hadoop.
+
 Until next release beta2,  please remove the -libjars segment of the command, which is unnecessary and misplaced.
 
 When debugging in a single-node Hadoop environment, for the example of our query above, the following commands are used (remember that in advance we have copied ./ysmartspatial/jts_library/jts-1.12.jar  to  $HADOOP_HOME/lib  ):
@@ -73,7 +74,7 @@ python translate_spatial.py ./test/cerere_simpla7_2.sql ./test/BIOMEDICAL.schema
 
 === Running the MapReduce jobs again, for the new configuration ===
 
-Running the MapReduce jobs:
+Running the MapReduce jobs . Until next release beta2,  please remove the -libjars segment of the command, which is unnecessary and misplaced.
 
 cd ./ysmartspatial/result 
 
@@ -83,7 +84,7 @@ The result can be read in the output file or can be viewed in terminal after iss
 
 cat YSmartOutput/testquery1/*
 
-
+cd ..
 
 === Switching back to version 1 of RESQUE , for benchmarking ===
 
