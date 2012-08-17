@@ -22,7 +22,8 @@
 import os
 import subprocess
 import sys
-import setup_integration
+import setup_integration_1
+import setup_integration_2
 
 CURRENT_DIR = os.getcwd()
 FRONTEND_DIR = 'SpatialSQL2XML'
@@ -82,8 +83,9 @@ def install_frontend():
     print '--------------------------------------------------------------------'
     print 'Preparing setup for JNI integration with RESQUE'
     print '--------------------------------------------------------------------'
-    
-    setup_integration.setup_integrate_install()
+    #BY DEFAULT, VERSION 1 OF RESQUE IS USED, YOU CAN ANY TIME SWITCH TO VERSION 2 SEE READE STEP 1)
+    setup_integration_1.setup_integrate_install()   #version1
+    # setup_integration_2.setup_integrate_install() #version2
 
     print '--------------------------------------------------------------------'
     print 'Preparing back-end hadoop job generator'
@@ -112,8 +114,9 @@ def uninstall():
     print 'Cleaning JNI integration with RESQUE'
     print '--------------------------------------------------------------------'
     
-    setup_integration.setup_integrate_uninstall()
-    
+    #BY DEFAULT, VERSION 1 OF RESQUE IS USED, YOU CAN ANY TIME SWITCH TO VERSION 2 SEE READE STEP 1)
+    setup_integration_1.setup_integrate_uninstall()  #version 1
+    # setup_integration_2.setup_integrate_uninstall() #version2
     
     
     print '--------------------------------------------------------------------'
