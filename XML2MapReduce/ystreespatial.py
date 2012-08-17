@@ -129,7 +129,7 @@ class YExpTool:
             second_token = input_token_list[1]
             third_token = input_token_list[2]    
             fourth_token= input_token_list[3]
-            print 
+            
             if first_token["content"]=='ST_GEOMETRY' and first_token["name"]=='T_RESERVED':
                 
                 return YSpatialConsExp(third_token,"ST_GEOMETRY")
@@ -320,7 +320,7 @@ class YExpTool:
         first_token = input_token_list[0]
         t_n = first_token["name"]
         if t_n == "ID" or t_n in self.token_list_agg_func or t_n in self.token_list_spatial_funct:
-            #print 'IT IS  A FUNCTION!!'
+            
             #func(a,b,c)
             func_name = first_token["content"]
             #we process a, b,c ...
@@ -362,22 +362,22 @@ class YExpTool:
                     
                     a_para_list = []
             
-            #print 'lista parametrilor'
-            #print a_para_list
+            
+            
             t_para_list.append(a_para_list)
-            #print t_para_list
+            
 
             para_exp_list = []
             for ap in t_para_list:
-                #print '^^^^^^ chem iar pentru:'
-                #print ap
-                #print '^^^^^^^^^^^^^^^^^^^'
+                
+                
+                
                 para_exp_list.append(self.convert_token_list_to_exp_tree(ap))
-                #print '^^^^^^^^^^^^^^^^^^^'
+                
             
-            #print 'READY TO RETURN !!!'
+            
             if t_n in self.token_list_spatial_funct:
-                #print ':::::::::::::::::::returns a yspatialfuncexp'
+                
                 return YSpatialFuncExp(func_name, para_exp_list)
             
             return YFuncExp(func_name, para_exp_list)
@@ -491,7 +491,7 @@ class YFuncExp(YExpBase):
         return True
     
     def debug(self):
-        print 'I AM A YFUNCEXP WITH NAME='+self.func_name+' AND I HAVE '
+        print 'I AM A YFUNCEXP WITH NAME=',self.func_name,' AND I HAVE '
         print len(self.parameter_list)
         print 'CHILDREN:'
         for p in self.parameter_list:
@@ -504,7 +504,7 @@ class YSpatialFuncExp(YFuncExp):
         YFuncExp.__init__(self,input_func_name, input_parameter_list)  
         
     def debug(self):
-        print 'I AM A YSPATIALFUNCEXP WITH NAME='+self.func_name+' AND I HAVE '
+        print 'I AM A YSPATIALFUNCEXP WITH NAME=',self.func_name,' AND I HAVE '
         print len(self.parameter_list)
         print 'CHILDREN:'
         for p in self.parameter_list:
@@ -550,7 +550,7 @@ class YConsExp(YExpBase):
         return True
     
     def debug(self):
-        print 'I AM A YCONSEXP WITH TYPE='+self.cons_type
+        print 'I AM A YCONSEXP WITH TYPE=',self.cons_type
         
         return    
 
@@ -559,7 +559,7 @@ class YSpatialConsExp(YConsExp):
         YConsExp.__init__(self,input_cons_value, input_cons_type)
     
     def debug(self):
-        print 'I AM A YSPATIALCONSEXP WITH TYPE='+self.cons_type
+        print 'I AM A YSPATIALCONSEXP WITH TYPE=',self.cons_type
         
         return     
         
@@ -622,7 +622,7 @@ class YRawColExp(YExpBase):
         return True
     
     def debug(self):
-        print 'I AM A YRAWCOLEXP WITH TABLENAME='+self.table_name+' AND COLUMN_NAME='+self.column_name
+        print 'I AM A YRAWCOLEXP WITH TABLENAME=',self.table_name,' AND COLUMN_NAME=',self.column_name
         
         return       
 
@@ -760,7 +760,7 @@ class QueryPlanTreeBase(object):
         pass
     
     def debug2(self):
-        print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+        
         print 'self=',self
         if self.select_list is None:
             print 'my select list: NONE'
@@ -1418,7 +1418,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
     def convert_to_binary_join_tree_spatial(self):
         
         
-        #print self.identified_joins
+        
         
         #Step1: process children
         tmp_list = list(self.children_list)
@@ -1438,30 +1438,53 @@ class MultipleJoinNode(QueryPlanTreeBase):
             #find sources that appear in spatial joins --> will come last 
             spatial_last=[]
             for x in self.identified_joins:
+                
                 if x[0]=='spatial':
+                    
                     if x[1] not in spatial_last and x[2] not in spatial_last:
+                        
                         #ORACLE optimization to put second argument of spatial predicate first
                         spatial_last.append(x[2])
                         spatial_last.append(x[1])
                     elif x[1] not in spatial_last:
+                        
                         #add it immediately after the second table in order
                         pos=spatial_last.index(x[2])
                         spatial_last_sav= spatial_last[:pos]
                         spatial_last_sav.append(x[1])
-                        spatial_last_sav.append(spatial_last[pos+1:])
+                        spatial_last_sav=spatial_last_sav+(spatial_last[pos+1:])
                         spatial_last=spatial_last_sav
                     elif x[2] not in spatial_last:
+                        
                         #add it immediately before the first table in order
                         pos=spatial_last.index(x[1])
-                        spatial_last_sav= spatial_last[:pos-1]
-                        spatial_last_sav.append(x[2])
-                        spatial_last_sav.append(spatial_last[pos:])
-                        spatial_last=spatial_last_sav 
+                        if pos==0:
+                            
+                            spatial_last_sav= []
+                            
+                            spatial_last_sav.append(x[2])
+                            
+                            spatial_last_sav=spatial_last_sav+spatial_last
+                            
+                            spatial_last=spatial_last_sav 
+                            
+                        else:
+                            
+                            spatial_last_sav= spatial_last[:pos-1]
+                            
+                            spatial_last_sav.append(x[2])
+                            
+                            spatial_last_sav=spatial_last_sav+(spatial_last[pos:])
+                            
+                            spatial_last=spatial_last_sav 
+                                                        
                     
             # now build the list of sources that don't participate in spatial joins
             nonspatial_first=[]
             for x in self.identified_joins:
+                
                 if x[0]=='nonspatial': 
+                    
                     if x[1] not in spatial_last and x[1] not in nonspatial_first:
                         nonspatial_first.append(x[1])
                     if x[2] not in spatial_last and x[2] not in nonspatial_first:
@@ -1473,15 +1496,18 @@ class MultipleJoinNode(QueryPlanTreeBase):
                     
             
             for source in tmp_children_list:
+                
                 if isinstance(source,TableNode) and (source.table_name not in nonspatial_first) and (source.table_alias not in nonspatial_first) and (source.table_name not in spatial_last) and (source.table_alias not in spatial_last):
-                    #print 'treating a tablenode for carthesian join'
+                    
                     if source.table_alias is None:
                         nonspatial_first.append(source.table_name)
+                        #print 'treating a tablenode for carthesian join',source.table_name
                     else:
                         nonspatial_first.append(source.table_alias)
+                        #print 'treating a tablenode for carthesian join',source.table_alias
                 elif isinstance(source,SelectProjectNode) and (source.table_alias not in nonspatial_first) and (source.table_alias not in spatial_last):
                     nonspatial_first.append(source.table_alias)
-                    #print 'treating a selectprojectnode for carthesian join'
+                    #print ' treating a selectprojectnode for carthesian join',source.table_alias
             
                     
                         
@@ -1497,7 +1523,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
             
             for nsf in nonspatial_first:
                 
-                
+                #print 'processinf nonspatial first.......'
                 
                 for a_child in tmp_children_list:
                     
@@ -1557,6 +1583,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
             for sf in spatial_last:
                                 
                 contor_spatial=contor_spatial+1
+                #print 'processinf spatial last .......'
                 for a_child in tmp_children_list:
                     
                     
@@ -2017,8 +2044,8 @@ class MultipleJoinNode(QueryPlanTreeBase):
                 for a_cond in self.join_info[0].where_condition_exp.parameter_list:
                     if isinstance(a_cond,YFuncExp):
                         
-                        # if we want non-equijoins, to use below 
-                        # if a_cond.func_name in ["EQ", "GTH", "LTH", "NOT_EQ","GEQ","LEQ"]:
+                        # if we want non-equijoins, to use below
+                        #if a_cond.func_name in ["EQ", "GTH", "LTH", "NOT_EQ","GEQ","LEQ"]:
                         if a_cond.func_name=='EQ':
                             
                             ret_elem=self.utility_identify_join_types(a_cond)
@@ -2029,7 +2056,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
             #case when there is only one condition in WHERE
             elif self.join_info[0].where_condition_exp.func_name=='EQ':
                 # if we want non-equijoins, to use  above
-                # if self.join_info[0].where_condition_exp.func_name in ["EQ", "GTH", "LTH", "NOT_EQ","GEQ","LEQ"]:
+            #elif self.join_info[0].where_condition_exp.func_name in ["EQ", "GTH", "LTH", "NOT_EQ","GEQ","LEQ"]:
                 
                 a_cond=self.join_info[0].where_condition_exp
                 ret_elem=self.utility_identify_join_types(a_cond)
@@ -2069,7 +2096,7 @@ class MultipleJoinNode(QueryPlanTreeBase):
             a_child.debug(level + 1)
     
     def debug2(self):
-        print '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+        
         print 'self=',self
         if self.select_list is None:
             print 'my select list: NONE'
@@ -2897,7 +2924,7 @@ class FirstStepWhereCondition:
 
     def utility_convert_real_where_condition_to_exp(self, real_where_condition):
 
-        #todo: consider ()!!!!!!!!!!!!!!!!!!!!!!
+        #todo: consider ()!
 
 
         c = real_where_condition
@@ -5730,11 +5757,3 @@ def ysmart_tree_gen(schema,xml_file):
 
     return node
 
-#if __name__ == '__main__':
-    
-    #schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/21TEST.schema'
-    #xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/21TEST7.xml'
-    
-    
-    #print 'Query Plan For:',xml_file
-    #ysmart_tree_gen(schema,xml_file)
