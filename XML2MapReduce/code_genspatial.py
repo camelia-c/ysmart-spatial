@@ -226,19 +226,19 @@ def write_spatial_code(exp,buf_dict):
                 res_str=rr
                 #print 'WILL CALL RESQUE......',res_str   
                 if isinstance(para2,ystreespatial.YSpatialConsExp):
-                    #print 'with constant'
+                    #print 'with constant, the order matters'
                     res_str='(red.read('+util_wkt1+'))'
                     res_str+='.within('
                     res_str+='(red.read('+util_wkt2+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean'         
                 elif isinstance(para1,ystreespatial.YSpatialConsExp):
-                    #print 'with constant'
-                    res_str='(red.read('+util_wkt2+'))'
+                    #print 'with constant, the order matters'
+                    res_str='(red.read('+util_wkt1+'))'
                     res_str+='.within('
-                    res_str+='(red.read('+util_wkt1+'))'
+                    res_str+='(red.read('+util_wkt2+'))'
                     res_str+=')?1:0'         #because the result in JTS is boolean                                 
             else:
-                return 'NOT YET IMPLEMENTED in boost'
+                return 'NOTYET IMPLEMENTED in boost'
         
         
                
@@ -486,7 +486,10 @@ def __where_convert_to_java__(exp,buf_dict):
     return_str = "" 
 
     if isinstance(exp,ystreespatial.YFuncExp):
+        
+        
 
+        
         if exp.func_name in rel_func_dict.keys() or exp.func_name in math_func_dict.keys():
             tmp_list = []
             op_type = None
@@ -511,6 +514,7 @@ def __where_convert_to_java__(exp,buf_dict):
                 elif isinstance(tmp_exp,ystreespatial.YFuncExp):
                     
                     tmp_str = __where_convert_to_java__(tmp_exp,buf_dict)
+                    
                     tmp_list.append(tmp_str)
                     op_type = "DECIMAL"
                     
@@ -527,7 +531,16 @@ def __where_convert_to_java__(exp,buf_dict):
                 exit(29)
                 
             
-            return_str = __operator_to_java__(op_type,exp.func_name,tmp_list)
+            willomit=0
+            for elw in tmp_list:
+                if elw[0]=='#':
+                    #print 'treat spatial'
+                    willomit=1
+            if willomit==0:
+                return_str = __operator_to_java__(op_type,exp.func_name,tmp_list)
+            else:
+                return_str = __operator_to_java__(op_type,exp.func_name,tmp_list)
+                return_str='#'+return_str+'#'
 
         elif exp.func_name in agg_func_list:
             
@@ -556,9 +569,19 @@ def __where_convert_to_java__(exp,buf_dict):
         elif exp.func_name in spatial_func_list:
             
             fun_str=write_spatial_code(exp,buf_dict)
-            return_str += "("
-            return_str += fun_str
-            return_str += ")"
+            #verify first 5 letters
+            
+            if fun_str[:5] in ['INTER','DISJO','EQUAL','OVERL','WITHI']:
+                #don't append to return_string, put separately
+                
+                return_str +="#"+"("+fun_str+")"+"#"
+            elif fun_str[0:5]=='NOTYET':
+                return_str +="#(1==1)#"
+            else:
+                
+                return_str += "("
+                return_str += fun_str
+                return_str += ")"
             
 
         else:
@@ -1552,7 +1575,7 @@ def __get_join_key__(exp,col_list,table):
     
     
     if isinstance(exp,ystreespatial.YFuncExp) and exp.func_name in spatial_func_list:
-        #MODIFY TO HAVE THE TILE AS KEY
+        
         return
         
     
@@ -2342,11 +2365,54 @@ def __join_gen_mr__(tree,left_name,fo):
             
             #ADD CODE FOR SPATIAL JOIN PROCESSING 
             if calls_resque==1:
-                #print 'one, CALL_RESQUE=',calls_resque
+                
                 
                 #print 'adding code for resque integration===============>>>>>>'
                 sstr1=__where_convert_to_java__(exp,buf_dict)
                 #print '(code@util_wkt1@util_wkt2)',sstr1
+                
+                
+                
+                
+                
+                rest_of_nonspatial_cond=sstr1
+                auxstringw=""
+                posw1=rest_of_nonspatial_cond.find('#')
+                posw2=0
+                foundw=-1
+                
+                while(posw1!=-1):
+                    posw2=rest_of_nonspatial_cond.find('#',posw1+1)
+                    
+                    posw2=rest_of_nonspatial_cond.find('#',posw2+1)
+                    
+                    posw2=rest_of_nonspatial_cond.find('#',posw2+1)# fourth occurence closes spatial condition
+                    
+                    auxstringw=rest_of_nonspatial_cond[posw1:posw2+1] 
+                    if foundw==-1:
+                        #in a multiple overlap request, do first
+                        
+                        sstr1=rest_of_nonspatial_cond[posw1:posw2+1]
+                        sstr1=sstr1.replace('#',' ')
+                        sstr1=sstr1.strip()
+                        
+                        foundw=0;
+                    
+                    
+                    
+                    rest_of_nonspatial_cond=rest_of_nonspatial_cond.replace(auxstringw,"^")
+                    #if the ^ is bordered by && or ||, elminate the one in front/or behind of it as well
+                    ppp=rest_of_nonspatial_cond.find('^')
+                    if ppp==0:
+                        rest_of_nonspatial_cond=rest_of_nonspatial_cond[4:] #remove from behind
+                    else:
+                        rest_of_nonspatial_cond=rest_of_nonspatial_cond[:ppp-3]+" "+rest_of_nonspatial_cond[ppp+1:]  #remove from before
+                    
+                    rest_of_nonspatial_cond=rest_of_nonspatial_cond.strip()
+                    
+                    posw1=rest_of_nonspatial_cond.find('#') #search for a new spatial cond if it exists
+                
+                
                 
                 pp11=sstr1.find('==')
                 pp12=sstr1.find('!=')
@@ -2368,7 +2434,7 @@ def __join_gen_mr__(tree,left_name,fo):
                 elif pp16!=-1:
                     sstr1=sstr1[:pp16]
                 
-                sstr1=sstr1[:-2] 
+                sstr1=sstr1[:-3] 
                 
                 partssstr1=sstr1.split('@')
                 
@@ -2412,30 +2478,47 @@ def __join_gen_mr__(tree,left_name,fo):
                 print >>fo,"\t\t\t\tString[] " + left_line_buffer + " = ((String)" + left_array + ".get(leftindex)).split(\"\\\|\");"
                 print >>fo,"\t\t\t\tString[] " + right_line_buffer + " = ((String)" + right_array + ".get(rightindex)).split(\"\\\|\");"
                 
+                #put here the rest of nonspatial condition
+                rest_of_nonspatial_cond=rest_of_nonspatial_cond.strip()
+                if len(rest_of_nonspatial_cond)>0:
+                    print >>fo,"\t\t\t\t if("+rest_of_nonspatial_cond+"){"
+                    reduce_key = __gen_mr_value__(tree.select_list.tmp_exp_list[:1],reduce_key_type,buf_dict)
+                    reduce_value = __gen_mr_value__(tree.select_list.tmp_exp_list,reduce_value_type,buf_dict)
+                    
+                    
+                    
+                    tmp_output = "context.write("
+                    tmp_output += "key_op"
+                    tmp_output += ", "
+                    tmp_output += "new " + reduce_value_type + "(" + reduce_value + ")"
+                    tmp_output += ");"   
+                    print >>fo, "\t\t\t\t\t",tmp_output
+                    print >>fo, "\t\t\t\t}"
                 
+                else:
                 
-                
-                
+                    #as before
         
-                reduce_key = __gen_mr_value__(tree.select_list.tmp_exp_list[:1],reduce_key_type,buf_dict)
-                reduce_value = __gen_mr_value__(tree.select_list.tmp_exp_list,reduce_value_type,buf_dict)
-                
-                
-                
-                tmp_output = "context.write("
-                tmp_output += "key_op"
-                tmp_output += ", "
-                tmp_output += "new " + reduce_value_type + "(" + reduce_value + ")"
-                tmp_output += ");"
-    
-                print >>fo, "\t\t\t\t",tmp_output
+                    reduce_key = __gen_mr_value__(tree.select_list.tmp_exp_list[:1],reduce_key_type,buf_dict)
+                    reduce_value = __gen_mr_value__(tree.select_list.tmp_exp_list,reduce_value_type,buf_dict)
+                    
+                    
+                    
+                    tmp_output = "context.write("
+                    tmp_output += "key_op"
+                    tmp_output += ", "
+                    tmp_output += "new " + reduce_value_type + "(" + reduce_value + ")"
+                    tmp_output += ");"
+                    
+                    
+                    print >>fo, "\t\t\t\t",tmp_output
     
                 
                 
                 
                 
             elif calls_resque==0:
-                #print ' zero, CALL_RESQUE=',calls_resque
+                
                 
                 
                 print >>fo,"\t\t\tfor(int i=0;i<" + left_array + ".size();i++){\n"
@@ -3709,7 +3792,7 @@ def generate_code(tree,filename):
         return ret_name
 
     elif isinstance(tree,ystreespatial.TwoJoinNode) is True and isinstance(tree,ystreespatial.TwoJoinSpatialNode) is True:
-        #print 'generate code for a SpatialJoinNode....to be done in version 2, using RESQUE'
+        #print 'generate code for a SpatialJoinNode....using RESQUE'
         tree.output = filename
         fo = open(op_name,"w")
         name_generated_file=op_name
@@ -3842,8 +3925,8 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
     ret_name = classname
     
     if isinstance(tree,ystreespatial.TableNode):
-        #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " "  + input_path + "/" + tree.table_name + "/"  #was in YSmart
-        cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir + "/" + jarname + ".jar " + packagepath + classname + " "  + input_path + "/" + tree.table_name + "/" 
+        cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " "  + input_path + "/" + tree.table_name + "/"  
+         
         cmd += " " + output_path + "/" + tree.table_name + "/" 
         print >>fo, cmd
         if config.compile_jar is True and config.exec_jar is True:
@@ -3864,12 +3947,12 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
                     new_name = tree.composite.output + "/" + str(index)
             else:
                 ret_name = execute_jar(tree.child,jardir,jarname,new_name,input_path,output_path,fo)
-            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/" + new_name #was in YSmart
-            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/" + new_name 
+            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/" + new_name 
+            
             cmd += " " + output_path + "/" + classname + "/"
         else:
-            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" + tree.child.table_name + "/" #was in YSmart
-            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" + tree.child.table_name + "/" 
+            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" + tree.child.table_name + "/" 
+             
             cmd += " " + output_path + "/" + classname + "/"
 
         print >>fo,cmd
@@ -3895,12 +3978,12 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
                 
             else:
                 ret_name = execute_jar(tree.child,jardir,jarname,new_name,input_path,output_path,fo)
-            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " + output_path + "/" + new_name #was in YSmart
-            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath + classname + " " + output_path + "/" + new_name
+            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " + output_path + "/" + new_name 
+            
             cmd += " " + output_path + "/" + classname + "/"
         else:
-            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " + input_path + "/" + tree.child.table_name + "/" #was in YSmart
-            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath + classname + " " + input_path + "/" + tree.child.table_name + "/"
+            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " + input_path + "/" + tree.child.table_name + "/" 
+            
             cmd += " " + output_path + "/" + classname + "/"
         print >>fo,cmd
         if config.compile_jar is True and config.exec_jar is True:
@@ -3910,8 +3993,8 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
         #verify about self-join
         self_join_bool = __self_join__(tree)
         
-        #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" #was in YSmart
-        cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/"
+        cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" 
+        
         if not isinstance(tree.left_child,ystreespatial.TableNode):
             new_name = classname[:-1] + str(int(classname[-1])+1)
             if tree.left_composite is not None:
@@ -3928,12 +4011,12 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
                     new_name = tree.left_composite.output + "/" + str(index)
             else:
                 ret_name = execute_jar(tree.left_child,jardir,jarname,new_name,input_path,output_path,fo)
-            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/" #was in YSmart
-            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/"
+            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + output_path + "/" 
+            
             cmd += new_name + "/"
         else:
-            #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" #was in YSmart
-            cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir+ "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" 
+            cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath +classname + " " + input_path + "/" 
+             
             cmd += tree.left_child.table_name + "/"
             ret_name = classname
             
@@ -3977,8 +4060,8 @@ def execute_jar(tree,jardir,jarname,classname,input_path,output_path,fo):
         child_list = []
         new_name = classname[:-1] + str(int(classname[-1])+1)
         child_list.append(new_name)
-        #cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " "  #was in YSmart
-        cmd = "$HADOOP_HOME/bin/hadoop jar -libjars "+CURRENT_DIR+"/jts_library/jts-1.12.jar,"+CURRENT_DIR+"/jts_library/jtsio-1.12.jar  " + jardir + "/" + jarname + ".jar " + packagepath + classname + " " 
+        cmd = "$HADOOP_HOME/bin/hadoop jar " + jardir + "/" + jarname + ".jar " + packagepath + classname + " "  
+         
         for node in tree.child_list:
             ret_name = execute_jar(node,jardir,jarname,new_name,input_path,output_path,fo)
             new_name = ret_name[:-1] + str(int(new_name[-1])+1)
@@ -4069,18 +4152,6 @@ def ysmart_code_gen(argv,input_path,output_path):
 
     
 
-#if __name__ == '__main__':
-    
-    #spatial
-    #schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/21TEST.schema'
-    #xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/21TEST7.xml'
-    
-    #print 'Query Plan For:',xml_file
-    #non-spatial
-    #schema='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/tpch_query.schema'
-    #xml_file='/home/camelia/Documents/gsoc_emory/ysmartspatial/test/output/FISIER_query.xml'
-    #params=['',schema, xml_file]
-    
-    #ysmart_code_gen(params,'','')
+
     
     
