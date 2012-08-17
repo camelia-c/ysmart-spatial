@@ -19,7 +19,7 @@ public class ReducerRESQUE extends Configured{
 
   static 
   {
-    
+    //System.load("/home/camelia/Documents/gsoc_emory/ysmartspatial/bin/libReducerRESQUE.so");
     System.load(""+System.getProperty("user.dir").substring(0,(System.getProperty("user.dir").lastIndexOf("/"))+1)+"/bin/libReducerRESQUE.so"); 
   }
 }
