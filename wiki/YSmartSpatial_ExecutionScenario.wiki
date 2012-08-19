@@ -52,12 +52,15 @@ When debugging in a single-node Hadoop environment, for the example of our query
 We check the input data location and change the default path it if necessary . (e.g. change YSmartInput//MARKUP/  TO ./test/YSmartInput//MARKUP/ and so on) 
 
 $HADOOP_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery2 ./test/YSmartInput//MARKUP/ ./test/YSmartInput//COLLECTION/ ./test/YSmartOutput//testquery2/
+
 $HADOOP_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery3 ./test/YSmartInput//MARKUP/ ./test/YSmartInput//COLLECTION/ ./test/YSmartOutput//testquery3/
+
 $HADOOP_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery1 ./test/YSmartOutput//testquery2/ ./test/YSmartOutput//testquery3/ ./test/YSmartOutput//testquery1/
 
 The result can be read in the output file or can be viewed in terminal after issuing the command:
 
-cat ./test/YSmartOutput/testquery1/*
+cat ./test/YSmartOutput/testquery1/part-r-00000
+
 
 We get the answer:
 
@@ -105,12 +108,14 @@ Now we run again:
 
 
 $HADOOP_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery2 ./test/YSmartInput//MARKUP/ ./test/YSmartInput//COLLECTION/ ./test/YSmartOutput//testquery2/
+
 $HADOOP_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery3 ./test/YSmartInput//MARKUP/ ./test/YSmartInput//COLLECTION/ ./test/YSmartOutput//testquery3/
+
 $HADOOP_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery1 ./test/YSmartOutput//testquery2/ ./test/YSmartOutput//testquery3/ ./test/YSmartOutput//testquery1/
 
 The result can be read in the output file or can be viewed in terminal after issuing the command:
 
-cat ./test/YSmartOutput/testquery1/*
+cat ./test/YSmartOutput/testquery1/part-r-00000
 
 
 === Switching back to version 1 of RESQUE , for benchmarking ===
