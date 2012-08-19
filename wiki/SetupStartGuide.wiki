@@ -14,7 +14,7 @@ Pre-requisites for YSmartSpatial include  YSmart's pre-requisites, plus some add
 
 == Download ==
 
-The latest release is ysmartspatial_release_beta1.zip and can be downloaded [http://code.google.com/p/ysmart-spatial/downloads/detail?name=ysmartspatial_beta1.zip here]
+The latest release is ysmartspatial_final.zip and can be downloaded [http://code.google.com/p/ysmart-spatial/downloads/detail?name=ysmartspatial_final.zip&can=2&q= here]
 
 Resources from Internet, open source:
 
