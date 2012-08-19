@@ -1486,8 +1486,12 @@ def __groupby_gen_mr__(tree,fo):
     buf_dict["AGG"] = agg_buffer 
 
     reduce_value = ""
-
-    for i in range(0,len(tree.select_list.tmp_exp_list)-having_len):
+    
+    rangeaux=len(tree.select_list.tmp_exp_list)-having_len
+    if tree.having_clause is not None:
+        rangeaux=rangeaux+1
+    #for i in range(0,len(tree.select_list.tmp_exp_list)-having_len):
+    for i in range(0,rangeaux):
         exp = tree.select_list.tmp_exp_list[i]
         if isinstance(exp,ystreespatial.YFuncExp):
             tmp_list = []
@@ -3855,9 +3859,9 @@ def compile_class(tree,codedir,package_path,filename,fo):
     if "HADOOP_HOME" in os.environ:
         version = commands.getoutput("$HADOOP_HOME/bin/hadoop version").split("\n")[0].split(" ")[1]
 
-    #cmd = "javac -classpath $HADOOP_HOME/hadoop-common-"+version+".jar:$HADOOP_HOME/hadoop-hdfs-"+version+".jar:$HADOOP_HOME/hadoop-mapred-"+version+".jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jts-1.12.jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jtsio-1.12.jar:"+CURRENT_DIR+"/"+BACKEND_DIR+" " #general
+    cmd = "javac -classpath $HADOOP_HOME/hadoop-common-"+version+".jar:$HADOOP_HOME/hadoop-hdfs-"+version+".jar:$HADOOP_HOME/hadoop-mapred-"+version+".jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jts-1.12.jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jtsio-1.12.jar:"+CURRENT_DIR+"/"+BACKEND_DIR+" " #general
     
-    cmd = "javac -classpath /usr/lib/hadoop-0.20/hadoop-core-0.20.2-cdh3u3.jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jts-1.12.jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jtsio-1.12.jar:"+CURRENT_DIR+"/"+BACKEND_DIR+" " #with cloudera
+    #cmd = "javac -classpath /usr/lib/hadoop-0.20/hadoop-core-0.20.2-cdh3u3.jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jts-1.12.jar:"+CURRENT_DIR+"/"+JTS_DIR+"/jtsio-1.12.jar:"+CURRENT_DIR+"/"+BACKEND_DIR+" " #with cloudera
     cmd += codedir + "/*.java -d ." 
     print 'compiling generated classes command.........................................'
     print '',cmd
@@ -4144,7 +4148,7 @@ def ysmart_code_gen(argv,input_path,output_path):
     compile_class(tree_node,resultdir+codedir[1:],packagepath,config.queryname,fo)
     generate_jar(resultdir+jardir[1:],resultdir+codedir[1:]+'/'+packagepath,config.queryname,fo,resultdir,codedir)
 
-    execute_jar(tree_node,jardir,config.queryname,config.queryname,input_path,output_path,fo)
+    execute_jar(tree_node,resultdir+jardir[1:],config.queryname,config.queryname,input_path,output_path,fo)
 
     os.chdir(pwd)
     
