@@ -175,6 +175,7 @@ export LD_LIBRARY_PATH= PATH_TO_YOUR_YSMARTSPATIAL/ysmartspatial/bin:SPATIAL_SET
 In order to generate the classes in ysmartspatial/result/YSmartCode  and the jar in ysmartspatial/result/YSmartJar, the user provides at least the minimal arguments ( SQL file and  SCHEMA file):
 
 cd ./ysmartspatial
+
 python translate_spatial.py ./test/BENCHMARKING_SQL/BENCHMARK1.sql ./test/BIOMEDICAL.schema
 
 Please note that for queries with spatial join, it is recommended to use this minimal arguments manner.
@@ -182,6 +183,7 @@ Please note that for queries with spatial join, it is recommended to use this mi
 The other manner is to provide the minimal arguments ( SQL file and  SCHEMA file) and supplementary input arguments :
 
 cd ./ysmartspatial
+
 python translate_spatial.py ./test/BENCHMARKING_SQL/BENCHMARK1.sql ./test/BIOMEDICAL.schema myqueryBENCHMARK1 ./test/YSmartInput/ ./test/YSmartOutput/BENCHMARK1 
 
 The script automatically deletes the content of the /result folder,if it already exists, before each generation of new classes.
