@@ -1104,26 +1104,37 @@ class TableNode(QueryPlanTreeBase):
         for i in range(level):
             pb += "    "
 
-        if self.select_list is None:
-            sscs = str(None)
-        else:
-            sscs = self.select_list.converted_exp_str
+        #if self.select_list is None:
+        #    sscs = str(None)
+        #else:
+        #    sscs = self.select_list.converted_exp_str
                 
             #sscs = self.select_list.converted_str
 
-        if self.where_condition is None:
-            swc = str(None)
-        else:
-            swc = self.where_condition.converted_exp_str
+        #if self.where_condition is None:
+        #    swc = str(None)
+        #else:
+        #    swc = self.where_condition.converted_exp_str
 
-        tmp_str_select_list = "[" + sscs + "]"
-        if swc is not None:
+        #tmp_str_select_list = "[" + sscs + "]"
+        #if swc is not None:
+        #    tmp_str_where_condition = "[" + swc + "]"
+        #else:
+        #    tmp_str_where_condition = "[None]"
+        
+        if self.select_list is not None:
+            sscs =  self.select_list.utility_convert_exp_list_to_str(self.select_list.tmp_exp_list)
+            tmp_str_select_list = "[" + sscs + "]"
+        else:
+            tmp_str_select_list = "[None]"
+
+        if self.where_condition is not None:
+            swc = self.where_condition.utility_convert_exp_list_to_str(self.where_condition.where_condition_exp) 
             tmp_str_where_condition = "[" + swc + "]"
         else:
             tmp_str_where_condition = "[None]"
-        
-
         print pb, "TableNode", self.table_name, "{" + self.table_alias + "}", tmp_str_select_list, tmp_str_where_condition
+
 
 
 class TwoJoinNode(QueryPlanTreeBase):
@@ -5358,7 +5369,7 @@ def column_filtering(tree):
 
         column_filtering(tree.child)
 
-    elif isinstance(tree,TwoJoinNode):
+        elif isinstance(tree,TwoJoinNode):
 
         left_select_dict = {}
         left_exp_list = []
