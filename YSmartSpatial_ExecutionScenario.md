@@ -1,0 +1,144 @@
+# Guide and Scenario for Executing YSmartSpatial #
+
+We describe here an execution scenario for YSmartSpatial:
+  * we have already installed it --> it is be default configured to use version 1 of RESQUE
+  * we execute the whole jar generation and execution chain for a query , say  /ysmartspatial/test/BENCHMARKING\_SQL/BENCHMARK9.sql
+  * we switch the configuration of YSmartSpatial to use version 2 of RESQUE
+  * we execute again the whole jar generation and execution chain for a query , say  /ysmartspatial/test/BENCHMARKING\_SQL/BENCHMARK9.sql
+  * we might want to switch back again to use version 1 of RESQUE
+
+
+
+After installing YSmartSpatial, following the steps in the readme (also available in the wiki at http://code.google.com/p/ysmart-spatial/wiki/SetupStartGuide), we are now ready for executing it.
+
+By default, the environment is set up to use version 1 of RESQUE.
+
+FOR EXECUTION WE NEED TO:
+
+1) manually copy the file ./ysmartspatial/jts\_library/jts-1.12.jar to $HADOOP\_HOME/lib
+
+2) See again what you configured during installation as SPATIAL\_SETUP\_FOLDER\_LIB and CGAL\_SETUP\_FOLDER\_LIB. Then manually edit the $HADOOP\_HOME/conf/hadoop-env.sh file and add the following line in it:
+
+export LD\_LIBRARY\_PATH= PATH\_TO\_YOUR\_YSMARTSPATIAL/ysmartspatial/bin:SPATIAL\_SETUP\_FOLDER\_LIB:CGAL\_SETUP\_FOLDER\_LIB
+
+3) set the HADOOP\_HOME environment variable, for example:
+
+HADOOP\_HOME=/home/camelia/Documents/gsoc\_emory/HADOOP\_DOWNLOAD/hadoop-0.21.0
+export HADOOP\_HOME
+
+
+
+
+### Generating the MapReduce jobs ###
+
+cd ./ysmartspatial
+
+python translate\_spatial.py ./test/BENCHMARKING\_SQL/BENCHMARK9.sql ./test/BIOMEDICAL.schema > compile\_BENCHMARK.txt 2> compile\_BENCHMARK\_err.txt
+
+The result is found in ./ysmartspatial/result and consists of:
+  * the YSmartCode folder , with the generated Java files
+  * the YSmartJar folder  , with the generated JAR files (testquery1.jar)
+  * the  script with commands for execution (testquery.script).
+
+
+### Running the MapReduce jobs ###
+
+From the automatically generated script file found in ./ysmartspatial/result , we need to issue the commands beinning with $HADOOP\_HOME/bin/hadoop jar ........ that correspond to running mapreduce jobs on Hadoop.
+
+
+When debugging in a single-node Hadoop environment, for the example of our query above, the following commands are used (remember that in advance we have copied ./ysmartspatial/jts\_library/jts-1.12.jar  to  $HADOOP\_HOME/lib  ):
+
+We check the input data location and change the default path it if necessary . (e.g. change YSmartInput//MARKUP/  TO ./test/YSmartInput//MARKUP/ and so on)
+
+$HADOOP\_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery2 ./test/YSmartInput//MARKUP/ ./test/YSmartInput//COLLECTION/ ./test/YSmartOutput//testquery2/
+
+$HADOOP\_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery3 ./test/YSmartInput//MARKUP/ ./test/YSmartInput//COLLECTION/ ./test/YSmartOutput//testquery3/
+
+$HADOOP\_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery1 ./test/YSmartOutput//testquery2/ ./test/YSmartOutput//testquery3/ ./test/YSmartOutput//testquery1/
+
+The result can be read in the output file or can be viewed in terminal after issuing the command:
+
+cat ./test/YSmartOutput/testquery1/part-r-00000
+
+
+We get the answer:
+
+ALG1|DOC1|DOC2|ST\_GEOMETRY('POLYGON((110 50, 150 50, 150 60, 110 60, 110 50))')|ST\_GEOMETRY('POLYGON((110 0, 150 0, 150 60, 110 60, 110 0))')|400.0|
+
+ALG1|DOC1|DOC2|ST\_GEOMETRY('POLYGON((110 0, 150 0, 150 20, 110 20, 110 0))')|ST\_GEOMETRY('POLYGON((110 0, 150 0, 150 60, 110 60, 110 0))')|800.0|
+
+ALG1|DOC1|DOC2|ST\_GEOMETRY('POLYGON((175 80, 199 80, 199 99, 175 99, 175 80))')|ST\_GEOMETRY('POLYGON((175 80, 199 80, 199 99, 175 99, 175 80))')|456.0|
+
+ALG1|DOC1|DOC2|ST\_GEOMETRY('POLYGON((0 0, 10 0, 10 10, 0 10, 0 0))')|ST\_GEOMETRY('POLYGON((0 0, 50 0, 50 50, 0 50, 0 0))')|100.0|
+
+ALG1|DOC1|DOC2|ST\_GEOMETRY('POLYGON((0 0, 20 0, 20 20, 0 20, 0 0))')|ST\_GEOMETRY('POLYGON((0 0, 50 0, 50 50, 0 50, 0 0))')|400.0|
+
+ALG1|DOC1|DOC2|ST\_GEOMETRY('POLYGON((80 0, 90 0, 90 20, 80 20, 80 0))')|ST\_GEOMETRY('POLYGON((75 0, 99 0, 99 40, 75 40, 75 0))')|200.0|
+
+ALG2|DOC3|DOC4|ST\_GEOMETRY('POLYGON((101 50, 175 50, 175 60, 101 60, 101 50))')|ST\_GEOMETRY('POLYGON((110 20, 175 20, 175 60, 110 60, 110 20))')|650.0|
+
+ALG2|DOC3|DOC4|ST\_GEOMETRY('POLYGON((0 0, 5 0, 5 10, 0 10, 0 0))')|ST\_GEOMETRY('POLYGON((0 0, 50 0, 50 60, 0 60, 0 0))')|50.0|
+
+ALG2|DOC3|DOC4|ST\_GEOMETRY('POLYGON((0 15, 40 15, 40 40, 0 40, 0 15))')|ST\_GEOMETRY('POLYGON((0 0, 50 0, 50 60, 0 60, 0 0))')|1000.0|
+
+
+
+### Switching to version 2 of RESQUE , for benchmarking ###
+
+Now let us switch to the version 2 of RESQUE, for benchmarking. We issue the commands :
+
+python ./setup\_integration\_1.py uninstall
+
+rm ./bin/libReducerRESQUE.so
+
+python ./setup\_integration\_2.py install
+
+
+### Generating the MapReduce jobs again, for the new configuration ###
+
+We generate again the MapReduce jobs, in this new configuration of the environment:
+
+python translate\_spatial.py ./test/BENCHMARKING\_SQL/BENCHMARK9.sql ./test/BIOMEDICAL.schema > compile\_BENCHMARK.txt 2> compile\_BENCHMARK\_err.txt
+
+### Running the MapReduce jobs again, for the new configuration ###
+
+We delete the output folder so that there won't be conflict (Exception in thread "main" org.apache.hadoop.fs.FileAlreadyExistsException: Output directory test/YSmartOutput/testquery1 already exists).
+Now we run again:
+
+
+$HADOOP\_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery2 ./test/YSmartInput//MARKUP/ ./test/YSmartInput//COLLECTION/ ./test/YSmartOutput//testquery2/
+
+$HADOOP\_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery3 ./test/YSmartInput//MARKUP/ ./test/YSmartInput//COLLECTION/ ./test/YSmartOutput//testquery3/
+
+$HADOOP\_HOME/bin/hadoop jar ./result/YSmartJar/testquery1.jar edu/osu/cse/ysmart/testquery/testquery1 ./test/YSmartOutput//testquery2/ ./test/YSmartOutput//testquery3/ ./test/YSmartOutput//testquery1/
+
+The result can be read in the output file or can be viewed in terminal after issuing the command:
+
+cat ./test/YSmartOutput/testquery1/part-r-00000
+
+
+### Switching back to version 1 of RESQUE , for benchmarking ###
+
+Now let us switch back to the version 1 of RESQUE, for benchmarking. We issue the commands :
+
+python ./setup\_integration\_2.py uninstall
+
+rm ./bin/libReducerRESQUE.so
+
+python ./setup\_integration\_1.py install
+
+
+Please note, that the release contains a set of bechmark queries inspired by the biomedical research under /ysmartspatial/test/BENCHMARKING\_SQL
+
+Input data is also provided in this archive under /ysmartspatial/test/YSmartInput\_Large  with data sets containing 10 , 1000 and 100000 random markup records per document respectively (with associated features).
+
+
+Please note the following constraints of this software:
+
+  * markups in the input file should be wrapped in ST\_GEOMETRY('wkt') , where wkt is the textual representation of the markup. Due to boost and resque limitations, only polygons are accepted in spatial joins, so we need to write the POINT(x,y) as a small POLYGON ((x y, x+1 y,x+1 y+1, x  y+1, x y)).  In other queries, with spatial non-join predicates, other geometries are also supported. Polygons should have first and last points equal.
+  * capitalized letters are used in wkt text in constants and in input files, i.e. correct is ST\_GEOMETRY('POLYGON((....))') , not ST\_GEOMETRY('polygon((....))')
+  * the input data file should not have any newline at the end of the files;
+  * when running in mode RESQUE version 1, the accepted join predicates are ST\_INTERSECTS, ST\_DISJOINT, ST\_EQUALS, ST\_OVERLAPS, ST\_WITHIN. When running in mode RESQUE version 2, the same predicates are accepted but their processing is carried out as an intersect, due to RESQUE's back engine.
+  * when issuing queries, an equality condition on tile\_name ensures that the tile\_name will be used as partitioning key between mappers and reducers.
+
+Thank You!

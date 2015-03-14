@@ -1,0 +1,216 @@
+# YSmartSpatial Setup Start Guide #
+
+## Pre-requisites for YSmartSpatial ##
+
+Pre-requisites for YSmartSpatial include  YSmart's pre-requisites, plus some additional specific ones:
+
+  * A linux system with GCC (and G++) and Python installed.
+  * Java 1.6
+  * Hadoop 0.20.x or Hadoop 0.21.x
+  * gcj-4.3   (needed for javah command)
+  * cmake     (needed while installing CGAL)
+
+
+## Download ##
+
+The latest release is ysmartspatial\_final.zip and can be downloaded [here](http://code.google.com/p/ysmart-spatial/downloads/detail?name=ysmartspatial_final.zip&can=2&q=)
+
+Resources from Internet, open source:
+
+|boost\_1\_48\_0.tar.gz| http://www.boost.org/users/history/version_1_48_0.html |
+|:---------------------|:-------------------------------------------------------|
+|                   |
+|jts-1.12.zip       | http://sourceforge.net/projects/jts-topo-suite/        |
+|                   | http://tsusiatsoftware.net/jts/main.html               |
+|                   | formerly was http://www.vividsolutions.com/jts/jtshome.htm|
+|CGAL-3.8.tar.gz    |https://scm.cci.emory.edu/svn/virtual-gis/trunk/spatial/downloads/|
+
+
+## Install YSmartSpatial ##
+
+> Setup of the environment:
+
+0) Preparing the environment - one-time setup
+
+0.1) Set the environment variable $HADOOP\_HOME
+
+e.g.
+
+HADOOP\_HOME=/home/camelia/Documents/gsoc\_emory/HADOOP\_DOWNLOAD/hadoop-0.21.0
+export HADOOP\_HOME
+
+
+0.2) Install spatialindex
+
+Suppose we extracted the spatialindex-src-1.6.1.zip  provided in downloads folder of this release to the path   /home/camelia/Documents/gsoc\_emory/resque/spatialindex-src-1.6.1/
+
+./configure --prefix=/home/camelia/Documents/gsoc\_emory/resque/usr
+
+make
+
+make install
+
+
+The results of this installation, that we shall further use, are placed in:
+SPATIAL\_SETUP\_FOLDER\_LIB="/home/camelia/Documents/gsoc\_emory/resque/usr/lib"
+SPATIAL\_SETUP\_FOLDER\_INCLUDE="/home/camelia/Documents/gsoc\_emory/resque/usr/include"
+Please go now to /ysmartspatial/setup\_integration2.py and set these 2 variables according to your own paths
+
+
+0.3)  Install boost
+Suppose that we downloaded boost\_1\_48\_0.tar.gz provided at http://www.boost.org/users/history/version_1_48_0.html to the path /home/camelia/Documents/gsoc\_emory/resque/downloads
+
+cd /home/camelia/Documents/gsoc\_emory/resque/downloads
+
+tar -xzvf boost\_1\_48\_0.tar.gz
+
+cd /home/camelia/Documents/gsoc\_emory/resque/downloads/boost\_1\_48\_0
+
+./bootstrap.sh
+
+./bjam
+
+./bjam install –prefix=/home/camelia/Documents/gsoc\_emory/resque/usr
+
+
+The results of this installation, that we shall further use, are placed in the same paths as those of spatialindex, i.e. :
+
+SPATIAL\_SETUP\_FOLDER\_LIB="/home/camelia/Documents/gsoc\_emory/resque/usr/lib"
+
+SPATIAL\_SETUP\_FOLDER\_INCLUDE="/home/camelia/Documents/gsoc\_emory/resque/usr/include"
+
+You already set these variables in the /ysmartspatial/setup\_integration2.py before, so please continue to next step, 0.5).
+
+0.4) Install CGAL
+
+Suppose that we downloaded CGAL-3.8.tar.gz provided  at    https://scm.cci.emory.edu/svn/virtual-gis/trunk/spatial/downloads/  to the path  /home/camelia/Documents/gsoc\_emory/resque/
+
+cd /home/camelia/Documents/gsoc\_emory/resque/
+
+tar -xzvf  CGAL-3.8.tar.gz
+
+cd /home/camelia/Documents/gsoc\_emory/resque/CGAL-3.8
+
+export BOOST\_ROOT=/home/camelia/Documents/gsoc\_emory/resque/usr
+
+rm CmakeCache.txt
+
+cmake .
+
+make
+
+
+The results of this installation, that we shall further use, are placed in:
+CGAL\_SETUP\_FOLDER\_LIB="/home/camelia/Documents/gsoc\_emory/resque/CGAL-3.8/lib"
+CGAL\_SETUP\_FOLDER\_INCLUDE="/home/camelia/Documents/gsoc\_emory/resque/CGAL-3.8/include"
+
+Please go now to /ysmartspatial/setup\_integration2.py and set these 2 variables according to your own paths
+
+
+0.5) Ensure the correct contents of the folder ./ysmartspatial/boost\_library
+
+cd ./ysmartspatial
+
+At step 0.3), when we installed boost, we extracted the archive in a folder, say $B (e.g.  /home/camelia/Documents/gsoc\_emory/resque/downloads/boost\_1\_48\_0 ).
+Issue the following command to do the necessary copying:
+
+cp $B/boost ./boost\_library -r
+
+e.g.
+
+cp /home/camelia/Documents/gsoc\_emory/resque/downloads/boost\_1\_48\_0/boost  ./boost\_library -r
+
+
+0.6) Then get back to the folder ysmartspatial and execute the command:
+
+cd ./ysmartspatial
+
+python ./setup\_spatial.py install
+
+
+1) Optional, for switching between RESQUE versions 1 and 2,  re-generating the JNI integration library:
+
+1.1) if currently using version 1 (which is the default, installed at setup step 0), then switch to version 2 (based on ReducerRESQUE\_2.cpp) using these commands:
+
+cd ./ysmartspatial
+python ./setup\_integration\_1.py uninstall
+
+rm ./bin/libReducerRESQUE.so
+
+python ./setup\_integration\_2.py install
+
+
+1.2.) if currently using version 2, then switch to version 1 (based on ReducerRESQUE\_1.cpp) using these commands:
+
+cd ./ysmartspatial
+python ./setup\_integration\_2.py uninstall
+
+rm ./bin/libReducerRESQUE.so
+
+python ./setup\_integration\_1.py install
+
+
+
+Please note that at one moment in time, only one version of the CPP file can be active. Switching between ReducerRESQUE\_1.cpp and ReducerRESQUE\_2.cpp needs this step of regenerating the JNI integration library.
+By default, at step 0), while preparing the environment, version ReducerRESQUE\_1.cpp is used for building the integration library, libReducerRESQUE.so.
+
+
+
+2)
+
+Also, please do the following updates in Your Hadoop configuration:
+
+> FOR EXECUTION WE NEED TO:
+
+2.1) manually copy the file ./ysmartspatial/jts\_library/jts-1.12.jar to $HADOOP\_HOME/lib
+
+2.2) See again what you configured during installation as SPATIAL\_SETUP\_FOLDER\_LIB and CGAL\_SETUP\_FOLDER\_LIB. Then manually edit the $HADOOP\_HOME/conf/hadoop-env.sh file and add the following line in it:
+
+export LD\_LIBRARY\_PATH= PATH\_TO\_YOUR\_YSMARTSPATIAL/ysmartspatial/bin:SPATIAL\_SETUP\_FOLDER\_LIB:CGAL\_SETUP\_FOLDER\_LIB
+
+
+
+3) Executing YSmartSpatial to generate Java MapReduce files, and their compiled classes and JAR:
+
+In order to generate the classes in ysmartspatial/result/YSmartCode  and the jar in ysmartspatial/result/YSmartJar, the user provides at least the minimal arguments ( SQL file and  SCHEMA file):
+
+cd ./ysmartspatial
+
+python translate\_spatial.py ./test/BENCHMARKING\_SQL/BENCHMARK1.sql ./test/BIOMEDICAL.schema
+
+Please note that for queries with spatial join, it is recommended to use this minimal arguments manner.
+
+The other manner is to provide the minimal arguments ( SQL file and  SCHEMA file) and supplementary input arguments :
+
+cd ./ysmartspatial
+
+python translate\_spatial.py ./test/BENCHMARKING\_SQL/BENCHMARK1.sql ./test/BIOMEDICAL.schema myqueryBENCHMARK1 ./test/YSmartInput/ ./test/YSmartOutput/BENCHMARK1
+
+The script automatically deletes the content of the /result folder,if it already exists, before each generation of new classes.
+
+
+The complete execution script (with the extension .script; by default named testquery.script) has been automatically generated in the result folder and can be used for launching the MapReduce jobs on Hadoop.
+
+With regard to data files provided as input to MapReduce jobs:
+
+> -  data files for one table should be in a folder named with the table name (e.g. data for table FEATURE can be stored for example under path/test/YSmartInput/FEATURE ).
+> -  No newline is acceptable at the end of the data files!
+> -  for testing, some data is already provided under /ysmartspatial/test/YSmartInput  folder of this release archive
+
+
+
+Otherwise, if you opt for manual testing, please consider the following:
+> - respecting the syntax from the automatically generated script
+> - deleting the output folder prior to execution
+> - providing inputs accordingly :
+> > -- data files for one table should be in a folder named with the table name (e.g. data for table FEATURE can be stored for example under path/test/YSmartInput/FEATURE ). No newline is acceptable at the end of the data files!
+
+
+> -- for MapReduce jobs for self-joins provide 1 input, 1 output ; while for non self-joins provide 2 inputs , 1 output
+Anyway it is more convenient to launch the jobs automatically using the commands $HADOOP\_HOME/bin/hadoop jar .... of the generated script.
+
+
+
+
+
+Thank You !
